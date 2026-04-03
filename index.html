@@ -106,7 +106,7 @@
       </div>
       <div class="section-label">Välj aktivitet</div>
       <div id="eventsList"></div>
-      <div id="pickupSelectorWrap" class="hidden"></div>
+      
       <div id="publicStatus" class="status-msg"></div>
       <button class="submit-btn" type="button" id="signupBtn" onclick="submitSignup()" disabled>Jag vill hjälpa till</button>
     </div>
@@ -330,18 +330,39 @@ function renderPublicEvents() {
   if (!active.length) {
     el.innerHTML = '<div class="empty-state">Ingen aktivitet just nu.</div>';
     selectedEventId = null;
-    renderPickupSelector();
+    
     refreshSignupButton();
     return;
   }
 
   el.innerHTML = active.map(ev => {
+    const isSelected = selectedEventId === ev.id;
     const infoLine = isPickupEvent(ev)
       ? `${Math.max(0, getAllowedPickupLocations(ev).length - getBookedPickupLocations(ev.id).size)} av ${getAllowedPickupLocations(ev).length} hämtställen lediga`
       : `${Math.max(0, 7 - signupsCache.filter(s => s.event_id === ev.id && !s.is_waitlist).length)} av 7 platser lediga`;
 
+    let pickupHtml = '';
+    if (isSelected && isPickupEvent(ev)) {
+      const allowed = getAllowedPickupLocations(ev);
+      const booked = getBookedPickupLocations(ev.id);
+      pickupHtml = `
+        <div style="margin-top:10px;">
+          <div class="section-label">Välj var du kan hämta</div>
+          ${allowed.map(loc => {
+            const isBooked = booked.has(loc);
+            return `
+              <label class="pickup-option ${isBooked ? 'booked' : ''}">
+                <input type="checkbox" value="${escapeHtml(loc)}" ${isBooked ? 'disabled' : ''} onchange="refreshSignupButton()">
+                <span><strong>${escapeHtml(loc)}</strong><br><small>${isBooked ? 'Redan bokat' : 'Ledigt'}</small></span>
+              </label>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
     return `
-    <div class="event-card ${selectedEventId === ev.id ? 'selected' : ''}" onclick="selectEvent('${ev.id}')">
+    <div class="event-card ${isSelected ? 'selected' : ''}" onclick="selectEvent('${ev.id}')">
       <div class="event-top">
         <div class="event-emoji">${isPickupEvent(ev) ? '🚚' : '🍽️'}</div>
         <div style="flex:1;">
@@ -350,13 +371,14 @@ function renderPublicEvents() {
           <div class="event-sub">${isPickupEvent(ev) ? 'Hämtning från partner/donatörer' : 'Matutdelning'}${ev.time ? ' · ' + escapeHtml(ev.time) : ''}${ev.location ? ' · ' + escapeHtml(ev.location) : ''}</div>
           <div class="event-sub" style="margin-top:6px;font-weight:900;color:#2E7D4F;">${infoLine}</div>
           ${isPickupEvent(ev) ? '<span class="tag">Hämtning</span>' : '<span class="tag">Matutdelning</span>'}
+          ${pickupHtml}
         </div>
       </div>
     </div>
   `;
   }).join('');
 
-  renderPickupSelector();
+  
   refreshSignupButton();
 }
 
@@ -398,7 +420,7 @@ function selectEvent(id) {
   selectedEventId = id;
   hidePublicStatus();
   renderPublicEvents();
-  renderPickupSelector();
+  
 }
 function refreshSignupButton() {
   const btn = document.getElementById('signupBtn');
@@ -545,7 +567,7 @@ function resetForm() {
   document.getElementById('mainForm').classList.remove('hidden');
   document.getElementById('nameInput').value = '';
   selectedEventId = null;
-  renderPickupSelector();
+  
   renderPublicEvents();
   hidePublicStatus();
 }
