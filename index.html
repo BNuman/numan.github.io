@@ -285,11 +285,28 @@ async function loadSignups() {
   signupsCache = await api('/rest/v1/signups?select=*&order=created_at.asc');
 }
 async function reloadAll() {
+  const selectedAdminEvent = document.getElementById('adminEventSelect')?.value || '';
+  const selectedCancelEvent = document.getElementById('cancelEventSelect')?.value || '';
+
   await Promise.all([loadEvents(), loadSignups()]);
   renderPublicEvents();
   renderMgmtList();
   populateCancelSelect();
   populateAdminEventSelect();
+
+  if (selectedAdminEvent) {
+    const sel = document.getElementById('adminEventSelect');
+    if (sel && [...sel.options].some(o => o.value === selectedAdminEvent)) {
+      sel.value = selectedAdminEvent;
+    }
+  }
+
+  if (selectedCancelEvent) {
+    const sel = document.getElementById('cancelEventSelect');
+    if (sel && [...sel.options].some(o => o.value === selectedCancelEvent)) {
+      sel.value = selectedCancelEvent;
+    }
+  }
 }
 
 function renderPublicEvents() {
