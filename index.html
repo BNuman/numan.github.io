@@ -438,6 +438,7 @@
         </div>
         <div class="admin-actions">
           <button class="act-btn export" id="queueOpenBtn">🟢 Öppna kö</button>
+          <button class="act-btn danger" id="queueCloseBtn">🔒 Stäng kö</button>
           <button class="act-btn export" id="queueAssignBtn">🎲 Slumpa köplatser</button>
         </div>
         <div class="admin-actions" style="margin-top:8px;">
@@ -767,8 +768,9 @@
 
       if (!active.length) {
         el.innerHTML = '<div class="empty-state">Ingen aktivitet just nu.</div>';
-        document.getElementById('submitBtn').disabled = true;
         selectedEventId = null;
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) submitBtn.disabled = true;
         refreshSubmitBtn();
         return;
       }
@@ -1825,31 +1827,41 @@
     }
 
     function bindEvents() {
-      document.getElementById('nameInput').addEventListener('input', refreshSubmitBtn);
-      document.getElementById('submitBtn').addEventListener('click', submitSignup);
-      document.getElementById('resetBtn').addEventListener('click', resetForm);
-      document.getElementById('logoutBtn').addEventListener('click', doLogout);
-      document.getElementById('createEventBtn').addEventListener('click', addEvent);
-      document.getElementById('adminEventSelect').addEventListener('change', renderSignupList);
-      document.getElementById('exportBtn').addEventListener('click', doExport);
-      document.getElementById('clearEventBtn').addEventListener('click', doClearEvent);
-      document.getElementById('adminQueueEventSelect').addEventListener('change', renderAdminQueuePanel);
-      document.getElementById('cancelBtn').addEventListener('click', doCancel);
-      document.getElementById('adminPwInput').addEventListener('keydown', e => {
-        if (e.key === 'Enter') doLogin();
-      });
-      document.getElementById('newActivityType').addEventListener('change', renderAdminPickupOptions);
-      document.getElementById('adminQueueEventSelect').addEventListener('change', renderAdminQueuePanel);
-      document.getElementById('queueOpenBtn').addEventListener('click', openQueue);
-      document.getElementById('queueCloseBtn').addEventListener('click', closeQueue);
-      document.getElementById('queueAssignBtn').addEventListener('click', assignQueueNumbers);
-      document.getElementById('queueAddManualBtn').addEventListener('click', addManualQueueEntry);
-      document.getElementById('queueClearBtn').addEventListener('click', clearQueueForEvent);
-      document.getElementById('queueRefreshBtn').addEventListener('click', reloadAll);
-      document.getElementById('queueJoinBtn').addEventListener('click', joinQueue);
-      document.getElementById('queueLeaveBtn').addEventListener('click', leaveQueue);
+      const on = (id, event, handler) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(event, handler);
+      };
+
+      on('nameInput', 'input', refreshSubmitBtn);
+      on('submitBtn', 'click', submitSignup);
+      on('resetBtn', 'click', resetForm);
+      on('logoutBtn', 'click', doLogout);
+      on('createEventBtn', 'click', addEvent);
+      on('adminEventSelect', 'change', renderSignupList);
+      on('exportBtn', 'click', doExport);
+      on('clearEventBtn', 'click', doClearEvent);
+      on('adminQueueEventSelect', 'change', renderAdminQueuePanel);
+      on('cancelBtn', 'click', doCancel);
+      on('newActivityType', 'change', renderAdminPickupOptions);
+      on('queueOpenBtn', 'click', openQueue);
+      on('queueCloseBtn', 'click', closeQueue);
+      on('queueAssignBtn', 'click', assignQueueNumbers);
+      on('queueAddManualBtn', 'click', addManualQueueEntry);
+      on('queueClearBtn', 'click', clearQueueForEvent);
+      on('queueRefreshBtn', 'click', reloadAll);
+      on('queueJoinBtn', 'click', joinQueue);
+      on('queueLeaveBtn', 'click', leaveQueue);
+
+      const pw = document.getElementById('adminPwInput');
+      if (pw) {
+        pw.addEventListener('keydown', e => {
+          if (e.key === 'Enter') doLogin();
+        });
+      }
+
       [0,1,2,3].forEach(i => {
-        document.getElementById('atab' + i).addEventListener('click', () => switchTab(i));
+        const tabBtn = document.getElementById('atab' + i);
+        if (tabBtn) tabBtn.addEventListener('click', () => switchTab(i));
       });
     }
 
