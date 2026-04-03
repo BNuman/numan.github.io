@@ -362,8 +362,8 @@ function renderPublicEvents() {
     }
 
     return `
-    <div class="event-card ${isSelected ? 'selected' : ''}" onclick="selectEvent('${ev.id}')">
-      <div class="event-top">
+    <div class="event-card ${isSelected ? 'selected' : ''}">
+      <div class="event-top" onclick="selectEvent('${ev.id}')">
         <div class="event-emoji">${isPickupEvent(ev) ? '🚚' : '🍽️'}</div>
         <div style="flex:1;">
           <div class="event-title">${escapeHtml(ev.day_name)}</div>
@@ -433,7 +433,7 @@ function refreshSignupButton() {
   }
 
   if (isPickupEvent(ev)) {
-    const selectedPickup = Array.from(document.querySelectorAll('#pickupSelectorWrap input:checked')).length;
+    const selectedPickup = Array.from(document.querySelectorAll('.event-card.selected .pickup-option input:checked')).length;
     btn.disabled = !(name && selectedPickup > 0);
   } else {
     btn.disabled = !(selectedEventId && name);
@@ -466,7 +466,7 @@ async function submitSignup() {
 
     let result;
     if (isPickupEvent(ev)) {
-      const selectedLocations = Array.from(document.querySelectorAll('#pickupSelectorWrap input:checked')).map(x => x.value);
+      const selectedLocations = Array.from(document.querySelectorAll('.event-card.selected .pickup-option input:checked')).map(x => x.value);
       if (!selectedLocations.length) {
         showPublicStatus('Välj minst ett hämtställe.', false);
         return;
