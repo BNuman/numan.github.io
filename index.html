@@ -402,7 +402,7 @@
           </div>
         </div>
 
-        <button class="create-btn" id="createEventBtn" onclick="addEvent()">➕ Skapa aktivitet</button>
+        <button class="create-btn" type="button" id="createEventBtn" onclick="addEvent()">➕ Skapa aktivitet</button>
         <div class="success-msg" id="createSuccess">✅ Aktivitet skapad!</div>
       </div>
 
@@ -437,14 +437,14 @@
           <div class="queue-link-box" id="adminQueueLinkBox"></div>
         </div>
         <div class="admin-actions">
-          <button class="act-btn export" id="queueOpenBtn" onclick="openQueue()">🟢 Öppna kö</button>
-          <button class="act-btn danger" id="queueCloseBtn" onclick="closeQueue()">🔒 Stäng kö</button>
-          <button class="act-btn export" id="queueAssignBtn" onclick="assignQueueNumbers()">🎲 Slumpa köplatser</button>
+          <button class="act-btn export" type="button" id="queueOpenBtn" onclick="openQueue()">🟢 Öppna kö</button>
+          <button class="act-btn danger" type="button" id="queueCloseBtn" onclick="closeQueue()">🔒 Stäng kö</button>
+          <button class="act-btn export" type="button" id="queueAssignBtn" onclick="assignQueueNumbers()">🎲 Slumpa köplatser</button>
         </div>
         <div class="admin-actions" style="margin-top:8px;">
-          <button class="act-btn export" id="queueAddManualBtn" onclick="addManualQueueEntry()">➕ Lägg till utan mobil</button>
-          <button class="act-btn danger" id="queueClearBtn" onclick="clearQueueForEvent()">🗑️ Rensa hela kön</button>
-          <button class="act-btn danger" id="queueRefreshBtn" onclick="reloadAll()">↻ Uppdatera kö</button>
+          <button class="act-btn export" type="button" id="queueAddManualBtn" onclick="addManualQueueEntry()">➕ Lägg till utan mobil</button>
+          <button class="act-btn danger" type="button" id="queueClearBtn" onclick="clearQueueForEvent()">🗑️ Rensa hela kön</button>
+          <button class="act-btn danger" type="button" id="queueRefreshBtn" onclick="reloadAll()">↻ Uppdatera kö</button>
         </div>
         <div id="adminQueueList" style="margin-top:12px;"></div>
       </div>
@@ -1113,6 +1113,14 @@
     function getAdminSelectedPickupLocations() {
       return Array.from(document.querySelectorAll('#adminPickupList input:checked'))
         .map(el => el.value);
+    }
+
+    function ensureAdmin() {
+      if (!adminSession || !adminSession.access_token || isSessionExpired(adminSession)) {
+        clearAdminSession();
+        alert('Du måste vara inloggad som admin.');
+        throw new Error('Admin session missing');
+      }
     }
 
     async function addEvent() {
