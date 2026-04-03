@@ -53,6 +53,10 @@
     .event-title { font-size:18px; font-weight:900; }
     .event-sub { font-size:13px; color:#6b7280; font-weight:700; margin-top:4px; }
     .tag { display:inline-block; margin-top:6px; padding:6px 9px; border-radius:999px; background:#E3F0FF; color:#1565C0; font-size:11px; font-weight:900; }
+    .status-line { margin-top:8px; font-size:13px; font-weight:900; color:#2E7D4F; }
+    .status-line.full { color:#C0392B; }
+    .selected-badge { display:inline-block; margin-top:8px; padding:6px 10px; border-radius:999px; background:#E8F5EE; color:#2E7D4F; font-size:11px; font-weight:900; }
+
     .empty-state { text-align:center; padding:18px; color:#98A3AB; font-size:14px; font-weight:800; }
     .admin-panel { display:none; }
     .admin-panel.show { display:block; }
@@ -102,7 +106,7 @@
     <div id="mainForm">
       <div class="input-group">
         <div class="section-label">Ditt namn</div>
-        <input type="text" id="nameInput" placeholder="Skriv ditt fullständiga namn…" maxlength="50">
+        <input type="text" id="nameInput" placeholder="Skriv ditt fullständiga namn…" maxlength="50" oninput="saveVolunteerName(); refreshSignupButton()">
       </div>
       <div class="section-label">Välj aktivitet</div>
       <div id="eventsList"></div>
@@ -219,6 +223,7 @@
 const SUPABASE_URL = 'https://azmvdeynrqaldlqsmwkt.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXZkZXlucnFhbGRscXNtd2t0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNjAxODYsImV4cCI6MjA5MDczNjE4Nn0.GTKzntDmk4bV1bomnzPPr3Xs0IuwqjuoIv7XSvi3F9M';
 const ADMIN_SESSION_KEY = 'hf_admin_session_v3';
+const VOLUNTEER_NAME_KEY = 'hf_volunteer_name_v3';
 const PICKUP_LOCATIONS = [
   "Brogyllen Landala","Hemköp Guldheden","Willys Sten Sturegatan","Willys Heden","Willys Majorna",
   "Dahls Sisjön","Willys Påvelund","Willys Kaverös","Willys Tuve","Willys Hemma Torslanda",
@@ -231,6 +236,16 @@ let eventsCache = [];
 let signupsCache = [];
 let isCreatingEvent = false;
 let selectedEventId = null;
+
+function saveVolunteerName() {
+  const name = document.getElementById('nameInput')?.value?.trim() || '';
+  if (name) localStorage.setItem(VOLUNTEER_NAME_KEY, name);
+}
+function restoreVolunteerName() {
+  const saved = localStorage.getItem(VOLUNTEER_NAME_KEY) || '';
+  const input = document.getElementById('nameInput');
+  if (input && !input.value && saved) input.value = saved;
+}
 
 function escapeHtml(v) {
   return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -1004,11 +1019,12 @@ async function deleteEvent(id) {
   await reloadAll();
 }
 
-document.getElementById('nameInput').addEventListener('input', refreshSignupButton);
 
 async function init() {
   try {
     await reloadAll();
+    restoreVolunteerName();
+    refreshSignupButton();
     restoreAdminSession();
     renderCreatePickupOptions();
   } catch (err) {
