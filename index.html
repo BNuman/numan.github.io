@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Humanity First Sverige – Version A</title>
+  <title>Humanity First Sverige – Version B</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
@@ -17,18 +17,34 @@
     .card { background:#fff; border-radius:22px; padding:20px 18px; border:1px solid rgba(46,125,79,.08); box-shadow:0 6px 22px rgba(46,125,79,.08); margin-bottom:14px; }
     .section-label { font-size:11px; font-weight:900; letter-spacing:.14em; text-transform:uppercase; color:#6b7280; margin-bottom:10px; }
     .input-group { margin-bottom:15px; }
-    input[type=text], input[type=password], input[type=date], select { width:100%; padding:14px 15px; border-radius:14px; border:2px solid #d1e8da; background:#f9fafb; font-size:16px; font-weight:700; outline:none; font-family:'Nunito',sans-serif; }
+    input[type=text], input[type=password], input[type=date], select {
+      width:100%; padding:14px 15px; border-radius:14px; border:2px solid #d1e8da; background:#f9fafb;
+      font-size:16px; font-weight:700; outline:none; font-family:'Nunito',sans-serif;
+    }
     input:focus, select:focus { border-color:#4CAF74; background:#fff; }
-    .submit-btn, .create-btn, .mini-btn, .logout-btn { font-family:'Nunito',sans-serif; font-weight:900; cursor:pointer; border:none; }
-    .submit-btn, .create-btn { width:100%; padding:15px; border-radius:14px; font-size:18px; color:#fff; background:linear-gradient(135deg,#2E7D4F,#4CAF74); box-shadow:0 4px 14px rgba(46,125,79,.22); }
+    .submit-btn, .create-btn, .mini-btn, .logout-btn, .reset-btn {
+      font-family:'Nunito',sans-serif; font-weight:900; cursor:pointer; border:none;
+    }
+    .submit-btn, .create-btn {
+      width:100%; padding:15px; border-radius:14px; font-size:18px; color:#fff;
+      background:linear-gradient(135deg,#2E7D4F,#4CAF74); box-shadow:0 4px 14px rgba(46,125,79,.22);
+    }
     .submit-btn:disabled, .create-btn:disabled { opacity:.5; cursor:not-allowed; box-shadow:none; }
+    .reset-btn {
+      width:100%; padding:12px; border-radius:14px; border:2px solid #d1e8da; background:transparent;
+      color:#6b7280; font-size:14px;
+    }
     .admin-row { text-align:center; margin:8px 0 14px; }
     .admin-link { font-size:13px; color:#8d959b; font-weight:800; text-decoration:underline; cursor:pointer; }
     .status-msg { display:none; margin:10px 0 14px; padding:12px 14px; border-radius:12px; font-size:13px; font-weight:800; line-height:1.5; }
     .status-msg.show { display:block; }
     .status-msg.ok { background:#E8F5EE; color:#2E7D4F; border:2px solid #2E7D4F; }
     .status-msg.err { background:#FDECEA; color:#C0392B; border:2px solid #C0392B; }
-    .event-card, .mgmt-item { border:2px solid #d1e8da; border-radius:16px; background:#f9fafb; padding:14px; margin-bottom:10px; }
+    .event-card, .mgmt-item {
+      border:2px solid #d1e8da; border-radius:16px; background:#f9fafb; padding:14px; margin-bottom:10px;
+    }
+    .event-card { cursor:pointer; }
+    .event-card.selected { background:#E8F5EE; border-color:#2E7D4F; }
     .event-top, .mgmt-top { display:flex; gap:12px; align-items:flex-start; justify-content:space-between; }
     .event-emoji { font-size:28px; line-height:1; }
     .event-title { font-size:18px; font-weight:900; }
@@ -52,6 +68,14 @@
     .mini-btn.delete { background:#FDECEA; color:#C0392B; border-color:#F3C1BA; }
     .success-msg { display:none; margin-top:10px; font-size:13px; font-weight:900; text-align:center; color:#2E7D4F; }
     .success-msg.show { display:block; }
+    .confirm-screen { text-align:center; }
+    .confirm-icon { font-size:58px; display:block; margin-bottom:10px; }
+    .confirm-title { font-size:24px; font-weight:900; margin-bottom:8px; }
+    .confirm-msg { font-size:14px; line-height:1.6; color:#6b7280; margin-bottom:14px; }
+    .confirm-badge {
+      display:inline-block; padding:10px 14px; border-radius:12px; border:2px solid #2E7D4F;
+      background:#E8F5EE; color:#2E7D4F; font-size:14px; font-weight:900; margin-bottom:16px;
+    }
   </style>
 </head>
 <body>
@@ -60,12 +84,29 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1>Volontäraktiviteter</h1>
-    <div class="version">Version A – stabil bas</div>
+    <div class="version">Version B – anmälan</div>
   </div>
 
   <div class="card">
-    <div class="section-label">Aktuella aktiviteter</div>
-    <div id="eventsList"></div>
+    <div id="mainForm">
+      <div class="input-group">
+        <div class="section-label">Ditt namn</div>
+        <input type="text" id="nameInput" placeholder="Skriv ditt fullständiga namn…" maxlength="50">
+      </div>
+      <div class="section-label">Välj aktivitet</div>
+      <div id="eventsList"></div>
+      <div id="publicStatus" class="status-msg"></div>
+      <button class="submit-btn" type="button" id="signupBtn" onclick="submitSignup()" disabled>Jag vill hjälpa till</button>
+    </div>
+
+    <div class="confirm-screen hidden" id="confirmScreen">
+      <span class="confirm-icon">🎉</span>
+      <div class="confirm-title">Du är anmäld!</div>
+      <div class="confirm-msg">Tack! Din anmälan är nu registrerad.</div>
+      <div class="confirm-badge" id="confirmBadge"></div>
+      <br><br>
+      <button class="reset-btn" type="button" onclick="resetForm()">← Tillbaka</button>
+    </div>
   </div>
 
   <div class="admin-row"><span class="admin-link" onclick="toggleAdmin()">🔐 Admin-inloggning</span></div>
@@ -95,7 +136,7 @@
       <div id="tab0">
         <div class="input-group">
           <div class="section-label">Typ av aktivitet</div>
-          <select id="newActivityType" onchange="renderPickupOptions()">
+          <select id="newActivityType">
             <option value="utdelning">Matutdelning</option>
             <option value="hamtning">Hämtning från partner/donatörer</option>
           </select>
@@ -116,10 +157,6 @@
           <div class="section-label">Plats (valfritt)</div>
           <input type="text" id="newLocation" placeholder="t.ex. Frölunda torg">
         </div>
-        <div class="input-group hidden" id="pickupWrap">
-          <div class="section-label">Välj hämtställen</div>
-          <div id="pickupList"></div>
-        </div>
         <button class="create-btn" type="button" id="createEventBtn" onclick="addEvent()">➕ Skapa aktivitet</button>
         <div class="success-msg" id="createSuccess">✅ Aktivitet skapad!</div>
         <div class="status-msg" id="createError"></div>
@@ -136,15 +173,12 @@
 const SUPABASE_URL = 'https://azmvdeynrqaldlqsmwkt.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXZkZXlucnFhbGRscXNtd2t0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNjAxODYsImV4cCI6MjA5MDczNjE4Nn0.GTKzntDmk4bV1bomnzPPr3Xs0IuwqjuoIv7XSvi3F9M';
 const ADMIN_SESSION_KEY = 'hf_admin_session_v3';
-const PICKUP_LOCATIONS = [
-  "Brogyllen Landala","Hemköp Guldheden","Willys Sten Sturegatan","Willys Heden","Willys Majorna",
-  "Dahls Sisjön","Willys Påvelund","Willys Kaverös","Willys Tuve","Willys Hemma Torslanda",
-  "Willys Torslanda","SockerMajas Torslanda","Restaurang Kalimera Torslanda"
-];
 
 let adminSession = JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY) || 'null');
 let eventsCache = [];
+let signupsCache = [];
 let isCreatingEvent = false;
+let selectedEventId = null;
 
 function escapeHtml(v) {
   return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -205,22 +239,28 @@ function getHeaders(useAdmin = false, prefer = '') {
 async function loadEvents() {
   eventsCache = await api('/rest/v1/events?select=*&order=date.asc');
 }
+async function loadSignups() {
+  signupsCache = await api('/rest/v1/signups?select=*&order=created_at.asc');
+}
 async function reloadAll() {
-  await loadEvents();
+  await Promise.all([loadEvents(), loadSignups()]);
   renderPublicEvents();
   renderMgmtList();
 }
+
 function renderPublicEvents() {
   const el = document.getElementById('eventsList');
   const active = eventsCache.filter(e => e.active !== false);
 
   if (!active.length) {
     el.innerHTML = '<div class="empty-state">Ingen aktivitet just nu.</div>';
+    selectedEventId = null;
+    refreshSignupButton();
     return;
   }
 
   el.innerHTML = active.map(ev => `
-    <div class="event-card">
+    <div class="event-card ${selectedEventId === ev.id ? 'selected' : ''}" onclick="selectEvent('${ev.id}')">
       <div class="event-top">
         <div class="event-emoji">${isPickupEvent(ev) ? '🚚' : '🍽️'}</div>
         <div style="flex:1;">
@@ -232,6 +272,80 @@ function renderPublicEvents() {
       </div>
     </div>
   `).join('');
+
+  refreshSignupButton();
+}
+function selectEvent(id) {
+  selectedEventId = id;
+  hidePublicStatus();
+  renderPublicEvents();
+}
+function refreshSignupButton() {
+  const btn = document.getElementById('signupBtn');
+  const name = document.getElementById('nameInput').value.trim();
+  btn.disabled = !(selectedEventId && name);
+}
+function showPublicStatus(text, ok = true) {
+  const el = document.getElementById('publicStatus');
+  el.textContent = text;
+  el.className = 'status-msg show ' + (ok ? 'ok' : 'err');
+}
+function hidePublicStatus() {
+  const el = document.getElementById('publicStatus');
+  el.textContent = '';
+  el.className = 'status-msg';
+}
+
+async function submitSignup() {
+  const name = document.getElementById('nameInput').value.trim();
+  const ev = eventsCache.find(e => e.id === selectedEventId);
+
+  if (!name || !ev) return;
+
+  try {
+    hidePublicStatus();
+
+    const duplicate = signupsCache.find(s =>
+      s.event_id === ev.id &&
+      String(s.name || '').trim().toLowerCase() === name.toLowerCase()
+    );
+
+    if (duplicate) {
+      showPublicStatus('Du är redan anmäld till denna aktivitet.', false);
+      return;
+    }
+
+    const result = await api('/rest/v1/rpc/signup_volunteer', {
+      method: 'POST',
+      headers: getHeaders(false),
+      body: JSON.stringify({
+        p_event_id: ev.id,
+        p_name: name
+      })
+    });
+
+    await reloadAll();
+
+    const status = Array.isArray(result) && result[0] ? result[0].status : 'confirmed';
+    if (status === 'duplicate') {
+      showPublicStatus('Du är redan anmäld till denna aktivitet.', false);
+      return;
+    }
+
+    document.getElementById('confirmBadge').textContent = ev.day_name + ' – ' + ev.date;
+    document.getElementById('mainForm').classList.add('hidden');
+    document.getElementById('confirmScreen').classList.remove('hidden');
+  } catch (err) {
+    showPublicStatus('Något gick fel: ' + err.message, false);
+  }
+}
+function resetForm() {
+  document.getElementById('confirmScreen').classList.add('hidden');
+  document.getElementById('mainForm').classList.remove('hidden');
+  document.getElementById('nameInput').value = '';
+  selectedEventId = null;
+  renderPublicEvents();
+  hidePublicStatus();
 }
 
 function toggleAdmin() {
@@ -283,25 +397,6 @@ function switchTab(n) {
     document.getElementById('tab' + i).classList.toggle('hidden', i !== n);
   });
 }
-function renderPickupOptions() {
-  const isPickup = document.getElementById('newActivityType').value === 'hamtning';
-  const wrap = document.getElementById('pickupWrap');
-  const list = document.getElementById('pickupList');
-  wrap.classList.toggle('hidden', !isPickup);
-  if (!isPickup) {
-    list.innerHTML = '';
-    return;
-  }
-  list.innerHTML = PICKUP_LOCATIONS.map(loc => `
-    <label class="event-card" style="display:flex;gap:10px;align-items:flex-start;padding:12px;margin-bottom:8px;">
-      <input type="checkbox" value="${escapeHtml(loc)}" style="margin-top:4px;">
-      <span><strong>${escapeHtml(loc)}</strong></span>
-    </label>
-  `).join('');
-}
-function getSelectedPickupLocations() {
-  return Array.from(document.querySelectorAll('#pickupList input:checked')).map(x => x.value);
-}
 function showCreateError(text) {
   const el = document.getElementById('createError');
   el.textContent = text;
@@ -322,16 +417,11 @@ async function addEvent() {
   const date = document.getElementById('newDate').value;
   const time = document.getElementById('newTime').value.trim();
   const location = document.getElementById('newLocation').value.trim();
-  const selectedLocations = type === 'hamtning' ? getSelectedPickupLocations() : [];
 
   hideCreateError();
 
   if (!dayName || !date) {
     showCreateError('Ange rubrik och datum.');
-    return;
-  }
-  if (type === 'hamtning' && !selectedLocations.length) {
-    showCreateError('Välj minst ett hämtställe.');
     return;
   }
 
@@ -349,7 +439,7 @@ async function addEvent() {
         active: true,
         max_volunteers: 7,
         activity_type: type,
-        allowed_pickup_locations: selectedLocations,
+        allowed_pickup_locations: [],
         queue_enabled: false,
         queue_open: false,
         queue_assigned: false,
@@ -362,7 +452,6 @@ async function addEvent() {
     document.getElementById('newDate').value = '';
     document.getElementById('newTime').value = '';
     document.getElementById('newLocation').value = '';
-    renderPickupOptions();
 
     const success = document.getElementById('createSuccess');
     success.classList.add('show');
@@ -383,22 +472,26 @@ function renderMgmtList() {
     el.innerHTML = '<div class="empty-state">Inga aktiviteter skapade än.</div>';
     return;
   }
-  el.innerHTML = eventsCache.map(ev => `
-    <div class="mgmt-item">
-      <div class="mgmt-top">
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:900;">${escapeHtml(ev.day_name)}</div>
-          <div style="font-size:12px;color:#6b7280;">${escapeHtml(fmtDate(ev.date))}</div>
-          <div style="font-size:12px;color:#6b7280;margin-top:4px;">${isPickupEvent(ev) ? 'Hämtning från partner/donatörer' : 'Matutdelning'}${ev.time ? ' · ' + escapeHtml(ev.time) : ''}${ev.location ? ' · ' + escapeHtml(ev.location) : ''}</div>
-          ${isPickupEvent(ev) ? '<span class="tag">Hämtning</span>' : '<span class="tag">Matutdelning</span>'}
-        </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
-          <button class="mini-btn ${ev.active !== false ? 'active' : ''}" type="button" onclick="toggleEventActive('${ev.id}')">${ev.active !== false ? 'Aktiv' : 'Inaktiv'}</button>
-          <button class="mini-btn delete" type="button" onclick="deleteEvent('${ev.id}')">Ta bort</button>
+  el.innerHTML = eventsCache.map(ev => {
+    const count = signupsCache.filter(s => s.event_id === ev.id).length;
+    return `
+      <div class="mgmt-item">
+        <div class="mgmt-top">
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:900;">${escapeHtml(ev.day_name)}</div>
+            <div style="font-size:12px;color:#6b7280;">${escapeHtml(fmtDate(ev.date))}</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:4px;">${isPickupEvent(ev) ? 'Hämtning från partner/donatörer' : 'Matutdelning'}${ev.time ? ' · ' + escapeHtml(ev.time) : ''}${ev.location ? ' · ' + escapeHtml(ev.location) : ''}</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:4px;">${count} anmälda</div>
+            ${isPickupEvent(ev) ? '<span class="tag">Hämtning</span>' : '<span class="tag">Matutdelning</span>'}
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+            <button class="mini-btn ${ev.active !== false ? 'active' : ''}" type="button" onclick="toggleEventActive('${ev.id}')">${ev.active !== false ? 'Aktiv' : 'Inaktiv'}</button>
+            <button class="mini-btn delete" type="button" onclick="deleteEvent('${ev.id}')">Ta bort</button>
+          </div>
         </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 async function toggleEventActive(id) {
   ensureAdmin();
@@ -419,11 +512,13 @@ async function deleteEvent(id) {
   });
   await reloadAll();
 }
+
+document.getElementById('nameInput').addEventListener('input', refreshSignupButton);
+
 async function init() {
   try {
     await reloadAll();
     restoreAdminSession();
-    renderPickupOptions();
   } catch (err) {
     document.getElementById('eventsList').innerHTML = '<div class="empty-state">Kunde inte ladda data.<br>' + escapeHtml(err.message) + '</div>';
   }
