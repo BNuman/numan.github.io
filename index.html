@@ -215,6 +215,12 @@
 const SUPABASE_URL = 'https://azmvdeynrqaldlqsmwkt.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXZkZXlucnFhbGRscXNtd2t0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNjAxODYsImV4cCI6MjA5MDczNjE4Nn0.GTKzntDmk4bV1bomnzPPr3Xs0IuwqjuoIv7XSvi3F9M';
 const ADMIN_SESSION_KEY = 'hf_admin_session_v3';
+const PICKUP_LOCATIONS = [
+  "Brogyllen Landala","Hemköp Guldheden","Willys Sten Sturegatan","Willys Heden","Willys Majorna",
+  "Dahls Sisjön","Willys Påvelund","Willys Kaverös","Willys Tuve","Willys Hemma Torslanda",
+  "Willys Torslanda","SockerMajas Torslanda","Restaurang Kalimera Torslanda"
+];
+
 
 let adminSession = JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY) || 'null');
 let eventsCache = [];
@@ -797,6 +803,27 @@ async function adminRemovePickupLocation(signupId, encodedLoc) {
   renderSignupAdminList();
 }
 
+function renderCreatePickupOptions() {
+  const type = document.getElementById('newActivityType')?.value;
+  const wrap = document.getElementById('pickupWrap');
+  const list = document.getElementById('pickupList');
+  if (!wrap || !list) return;
+
+  if (type !== 'hamtning') {
+    wrap.classList.add('hidden');
+    list.innerHTML = '';
+    return;
+  }
+
+  wrap.classList.remove('hidden');
+  list.innerHTML = PICKUP_LOCATIONS.map(loc => `
+    <label class="event-card" style="display:flex;gap:10px;align-items:flex-start;padding:12px;margin-bottom:8px;">
+      <input type="checkbox" value="${escapeHtml(loc)}" style="margin-top:4px;">
+      <span><strong>${escapeHtml(loc)}</strong></span>
+    </label>
+  `).join('');
+}
+
 function toggleAdmin() {
   document.getElementById('adminPanel').classList.toggle('show');
 }
@@ -870,6 +897,9 @@ async function addEvent() {
   const date = document.getElementById('newDate').value;
   const time = document.getElementById('newTime').value.trim();
   const location = document.getElementById('newLocation').value.trim();
+  const selectedLocations = type === 'hamtning'
+    ? Array.from(document.querySelectorAll('#pickupList input:checked')).map(x => x.value)
+    : [];
 
   hideCreateError();
 
