@@ -1,66 +1,434 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Volontär & Digital kö</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Humanity First Sverige – Version A</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; padding:18px 14px 40px; background:#edf6ef; color:#1c2c20; font-family:'Nunito',sans-serif; }
+    .container { max-width:430px; margin:0 auto; }
+    .logo-area { text-align:center; margin-bottom:16px; }
+    .logo-img { width:88px; height:88px; object-fit:contain; display:block; margin:0 auto 8px; }
+    .org-name { font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#5f9b73; }
+    h1 { margin:10px 0 0; font-size:24px; line-height:1.14; font-weight:900; }
+    .version { margin-top:6px; font-size:12px; color:#7b8d82; font-weight:800; }
+    .card { background:#fff; border-radius:22px; padding:20px 18px; border:1px solid rgba(46,125,79,.08); box-shadow:0 6px 22px rgba(46,125,79,.08); margin-bottom:14px; }
+    .section-label { font-size:11px; font-weight:900; letter-spacing:.14em; text-transform:uppercase; color:#6b7280; margin-bottom:10px; }
+    .input-group { margin-bottom:15px; }
+    input[type=text], input[type=password], input[type=date], select { width:100%; padding:14px 15px; border-radius:14px; border:2px solid #d1e8da; background:#f9fafb; font-size:16px; font-weight:700; outline:none; font-family:'Nunito',sans-serif; }
+    input:focus, select:focus { border-color:#4CAF74; background:#fff; }
+    .submit-btn, .create-btn, .mini-btn, .logout-btn { font-family:'Nunito',sans-serif; font-weight:900; cursor:pointer; border:none; }
+    .submit-btn, .create-btn { width:100%; padding:15px; border-radius:14px; font-size:18px; color:#fff; background:linear-gradient(135deg,#2E7D4F,#4CAF74); box-shadow:0 4px 14px rgba(46,125,79,.22); }
+    .submit-btn:disabled, .create-btn:disabled { opacity:.5; cursor:not-allowed; box-shadow:none; }
+    .admin-row { text-align:center; margin:8px 0 14px; }
+    .admin-link { font-size:13px; color:#8d959b; font-weight:800; text-decoration:underline; cursor:pointer; }
+    .status-msg { display:none; margin:10px 0 14px; padding:12px 14px; border-radius:12px; font-size:13px; font-weight:800; line-height:1.5; }
+    .status-msg.show { display:block; }
+    .status-msg.ok { background:#E8F5EE; color:#2E7D4F; border:2px solid #2E7D4F; }
+    .status-msg.err { background:#FDECEA; color:#C0392B; border:2px solid #C0392B; }
+    .event-card, .mgmt-item { border:2px solid #d1e8da; border-radius:16px; background:#f9fafb; padding:14px; margin-bottom:10px; }
+    .event-top, .mgmt-top { display:flex; gap:12px; align-items:flex-start; justify-content:space-between; }
+    .event-emoji { font-size:28px; line-height:1; }
+    .event-title { font-size:18px; font-weight:900; }
+    .event-sub { font-size:13px; color:#6b7280; font-weight:700; margin-top:4px; }
+    .tag { display:inline-block; margin-top:6px; padding:6px 9px; border-radius:999px; background:#E3F0FF; color:#1565C0; font-size:11px; font-weight:900; }
+    .empty-state { text-align:center; padding:18px; color:#98A3AB; font-size:14px; font-weight:800; }
+    .admin-panel { display:none; }
+    .admin-panel.show { display:block; }
+    .admin-content { display:none; }
+    .admin-content.show { display:block; }
+    .login-error { display:none; margin-top:10px; color:#C0392B; font-size:13px; font-weight:800; }
+    .login-error.show { display:block; }
+    .admin-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+    .logout-btn { background:#fff; border:2px solid #444; color:#111; border-radius:16px; padding:9px 16px; font-size:14px; }
+    .admin-tabs { display:flex; gap:4px; border-bottom:2px solid #d1e8da; margin-bottom:14px; }
+    .atab { flex:1; background:none; border:none; padding:10px 6px; font-size:13px; font-weight:800; color:#6b7280; border-bottom:3px solid transparent; cursor:pointer; font-family:'Nunito',sans-serif; }
+    .atab.active { color:#2E7D4F; border-bottom-color:#2E7D4F; }
+    .hidden { display:none!important; }
+    .mini-btn { padding:8px 10px; border-radius:12px; font-size:11px; border:2px solid #d1e8da; background:#fff; color:#6b7280; }
+    .mini-btn.active { background:#E8F5EE; color:#2E7D4F; border-color:#2E7D4F; }
+    .mini-btn.delete { background:#FDECEA; color:#C0392B; border-color:#F3C1BA; }
+    .success-msg { display:none; margin-top:10px; font-size:13px; font-weight:900; text-align:center; color:#2E7D4F; }
+    .success-msg.show { display:block; }
+  </style>
 </head>
+<body>
+<div class="container">
+  <div class="logo-area">
+    <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
+    <div class="org-name">Humanity First Sverige</div>
+    <h1>Volontäraktiviteter</h1>
+    <div class="version">Version A – stabil bas</div>
+  </div>
 
-<body style="font-family:sans-serif;padding:20px;max-width:500px;margin:auto;">
+  <div class="card">
+    <div class="section-label">Aktuella aktiviteter</div>
+    <div id="eventsList"></div>
+  </div>
 
-<h2>Humanity First Sverige</h2>
+  <div class="admin-row"><span class="admin-link" onclick="toggleAdmin()">🔐 Admin-inloggning</span></div>
 
-<div id="app"></div>
+  <div class="card admin-panel" id="adminPanel">
+    <div id="adminLogin">
+      <div class="section-label">Admin e-post</div>
+      <input type="text" id="adminEmailInput" placeholder="admin@dinorg.se">
+      <div class="section-label" style="margin-top:12px;">Adminlösenord</div>
+      <input type="password" id="adminPwInput" placeholder="Ange lösenord…" onkeydown="if(event.key==='Enter') doLogin()">
+      <div class="login-error" id="loginError">❌ Kunde inte logga in.</div>
+      <br><br>
+      <button class="submit-btn" type="button" onclick="doLogin()">Logga in</button>
+    </div>
+
+    <div class="admin-content" id="adminContent">
+      <div class="admin-header">
+        <div style="font-weight:900;">⚙️ Admin</div>
+        <button class="logout-btn" type="button" onclick="doLogout()">Logga ut</button>
+      </div>
+
+      <div class="admin-tabs">
+        <button class="atab active" type="button" id="tabBtn0" onclick="switchTab(0)">➕ Skapa</button>
+        <button class="atab" type="button" id="tabBtn1" onclick="switchTab(1)">📅 Hantera</button>
+      </div>
+
+      <div id="tab0">
+        <div class="input-group">
+          <div class="section-label">Typ av aktivitet</div>
+          <select id="newActivityType" onchange="renderPickupOptions()">
+            <option value="utdelning">Matutdelning</option>
+            <option value="hamtning">Hämtning från partner/donatörer</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <div class="section-label">Rubrik</div>
+          <input type="text" id="newDayName" placeholder="t.ex. Torsdag 18 maj eller Hämtning söndag">
+        </div>
+        <div class="input-group">
+          <div class="section-label">Datum</div>
+          <input type="date" id="newDate">
+        </div>
+        <div class="input-group">
+          <div class="section-label">Tid (valfritt)</div>
+          <input type="text" id="newTime" placeholder="t.ex. 17:30 – 19:00">
+        </div>
+        <div class="input-group">
+          <div class="section-label">Plats (valfritt)</div>
+          <input type="text" id="newLocation" placeholder="t.ex. Frölunda torg">
+        </div>
+        <div class="input-group hidden" id="pickupWrap">
+          <div class="section-label">Välj hämtställen</div>
+          <div id="pickupList"></div>
+        </div>
+        <button class="create-btn" type="button" id="createEventBtn" onclick="addEvent()">➕ Skapa aktivitet</button>
+        <div class="success-msg" id="createSuccess">✅ Aktivitet skapad!</div>
+        <div class="status-msg" id="createError"></div>
+      </div>
+
+      <div id="tab1" class="hidden">
+        <div id="mgmtList"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
 const SUPABASE_URL = 'https://azmvdeynrqaldlqsmwkt.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXZkZXlucnFhbGRscXNtd2t0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNjAxODYsImV4cCI6MjA5MDczNjE4Nn0.GTKzntDmk4bV1bomnzPPr3Xs0IuwqjuoIv7XSvi3F9M';
+const ADMIN_SESSION_KEY = 'hf_admin_session_v3';
+const PICKUP_LOCATIONS = [
+  "Brogyllen Landala","Hemköp Guldheden","Willys Sten Sturegatan","Willys Heden","Willys Majorna",
+  "Dahls Sisjön","Willys Påvelund","Willys Kaverös","Willys Tuve","Willys Hemma Torslanda",
+  "Willys Torslanda","SockerMajas Torslanda","Restaurang Kalimera Torslanda"
+];
 
-async function api(path, options={}) {
-  const url = SUPABASE_URL + path;
-  const res = await fetch(url, {
-    method: options.method || "GET",
-    headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: "Bearer " + SUPABASE_KEY,
-      "Content-Type": "application/json"
-    },
-    body: options.body
-  });
+let adminSession = JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY) || 'null');
+let eventsCache = [];
+let isCreatingEvent = false;
 
-  if(!res.ok) {
+function escapeHtml(v) {
+  return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function fmtDate(ds) {
+  if (!ds) return '';
+  try { return new Date(ds + 'T12:00:00').toLocaleDateString('sv-SE', { weekday:'long', year:'numeric', month:'long', day:'numeric' }); }
+  catch(e) { return ds; }
+}
+function isPickupEvent(ev) { return (ev?.activity_type || 'utdelning') === 'hamtning'; }
+function isSessionExpired(session) {
+  if (!session || !session.expires_at) return true;
+  return (Date.now() / 1000) >= Number(session.expires_at);
+}
+function clearAdminSession() {
+  adminSession = null;
+  localStorage.removeItem(ADMIN_SESSION_KEY);
+  document.getElementById('adminLogin').style.display = 'block';
+  document.getElementById('adminContent').classList.remove('show');
+}
+function ensureAdmin() {
+  if (!adminSession || !adminSession.access_token || isSessionExpired(adminSession)) {
+    clearAdminSession();
+    alert('Du måste vara inloggad som admin.');
+    throw new Error('Admin session missing');
+  }
+}
+function api(path, options = {}) {
+  const defaultHeaders = {
+    apikey: SUPABASE_KEY,
+    Authorization: 'Bearer ' + SUPABASE_KEY
+  };
+  const headers = { ...defaultHeaders, ...(options.headers || {}) };
+  return fetch(SUPABASE_URL + path, {
+    method: options.method || 'GET',
+    headers,
+    body: options.body || undefined
+  }).then(async res => {
     const text = await res.text();
-    throw new Error(text);
-  }
-
-  return res.json();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch (e) { data = text; }
+    if (!res.ok) throw new Error(data?.message || data?.error_description || data?.error || text || ('HTTP ' + res.status));
+    return data;
+  });
+}
+function getHeaders(useAdmin = false, prefer = '') {
+  let token = SUPABASE_KEY;
+  if (useAdmin && adminSession?.access_token) token = adminSession.access_token;
+  const h = {
+    apikey: SUPABASE_KEY,
+    Authorization: 'Bearer ' + token,
+    'Content-Type': 'application/json'
+  };
+  if (prefer) h['Prefer'] = prefer;
+  return h;
 }
 
-async function load() {
-  try {
-    const events = await api('/rest/v1/events?select=*');
+async function loadEvents() {
+  eventsCache = await api('/rest/v1/events?select=*&order=date.asc');
+}
+async function reloadAll() {
+  await loadEvents();
+  renderPublicEvents();
+  renderMgmtList();
+}
+function renderPublicEvents() {
+  const el = document.getElementById('eventsList');
+  const active = eventsCache.filter(e => e.active !== false);
 
-    if (!events.length) {
-      document.getElementById("app").innerHTML = "<b>Ingen aktivitet just nu</b>";
-      return;
-    }
+  if (!active.length) {
+    el.innerHTML = '<div class="empty-state">Ingen aktivitet just nu.</div>';
+    return;
+  }
 
-    document.getElementById("app").innerHTML =
-      events.map(e => `
-        <div style="border:1px solid #ccc;padding:10px;margin:10px 0;">
-          <b>${e.day_name}</b><br>
-          ${e.date}
+  el.innerHTML = active.map(ev => `
+    <div class="event-card">
+      <div class="event-top">
+        <div class="event-emoji">${isPickupEvent(ev) ? '🚚' : '🍽️'}</div>
+        <div style="flex:1;">
+          <div class="event-title">${escapeHtml(ev.day_name)}</div>
+          <div class="event-sub">${escapeHtml(fmtDate(ev.date))}</div>
+          <div class="event-sub">${isPickupEvent(ev) ? 'Hämtning från partner/donatörer' : 'Matutdelning'}${ev.time ? ' · ' + escapeHtml(ev.time) : ''}${ev.location ? ' · ' + escapeHtml(ev.location) : ''}</div>
+          ${isPickupEvent(ev) ? '<span class="tag">Hämtning</span>' : '<span class="tag">Matutdelning</span>'}
         </div>
-      `).join("");
-
-  } catch (e) {
-    document.getElementById("app").innerHTML =
-      "<b>Fel:</b><br>" + e.message;
-  }
+      </div>
+    </div>
+  `).join('');
 }
 
-load();
-</script>
+function toggleAdmin() {
+  document.getElementById('adminPanel').classList.toggle('show');
+}
+async function doLogin() {
+  const email = document.getElementById('adminEmailInput').value.trim();
+  const password = document.getElementById('adminPwInput').value;
+  const errEl = document.getElementById('loginError');
+  errEl.classList.remove('show');
 
+  if (!email || !password) {
+    errEl.textContent = '❌ Ange e-post och lösenord.';
+    errEl.classList.add('show');
+    return;
+  }
+
+  try {
+    const data = await api('/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password })
+    });
+    adminSession = data;
+    localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(data));
+    document.getElementById('adminLogin').style.display = 'none';
+    document.getElementById('adminContent').classList.add('show');
+  } catch (err) {
+    errEl.textContent = '❌ ' + err.message;
+    errEl.classList.add('show');
+  }
+}
+function doLogout() { clearAdminSession(); }
+function restoreAdminSession() {
+  if (adminSession && adminSession.access_token && !isSessionExpired(adminSession)) {
+    document.getElementById('adminLogin').style.display = 'none';
+    document.getElementById('adminContent').classList.add('show');
+  } else if (adminSession) {
+    clearAdminSession();
+  }
+}
+function switchTab(n) {
+  [0,1].forEach(i => {
+    document.getElementById('tabBtn' + i).classList.toggle('active', i === n);
+    document.getElementById('tab' + i).classList.toggle('hidden', i !== n);
+  });
+}
+function renderPickupOptions() {
+  const isPickup = document.getElementById('newActivityType').value === 'hamtning';
+  const wrap = document.getElementById('pickupWrap');
+  const list = document.getElementById('pickupList');
+  wrap.classList.toggle('hidden', !isPickup);
+  if (!isPickup) {
+    list.innerHTML = '';
+    return;
+  }
+  list.innerHTML = PICKUP_LOCATIONS.map(loc => `
+    <label class="event-card" style="display:flex;gap:10px;align-items:flex-start;padding:12px;margin-bottom:8px;">
+      <input type="checkbox" value="${escapeHtml(loc)}" style="margin-top:4px;">
+      <span><strong>${escapeHtml(loc)}</strong></span>
+    </label>
+  `).join('');
+}
+function getSelectedPickupLocations() {
+  return Array.from(document.querySelectorAll('#pickupList input:checked')).map(x => x.value);
+}
+function showCreateError(text) {
+  const el = document.getElementById('createError');
+  el.textContent = text;
+  el.className = 'status-msg show err';
+}
+function hideCreateError() {
+  const el = document.getElementById('createError');
+  el.textContent = '';
+  el.className = 'status-msg';
+}
+async function addEvent() {
+  ensureAdmin();
+  if (isCreatingEvent) return;
+
+  const btn = document.getElementById('createEventBtn');
+  const type = document.getElementById('newActivityType').value;
+  const dayName = document.getElementById('newDayName').value.trim();
+  const date = document.getElementById('newDate').value;
+  const time = document.getElementById('newTime').value.trim();
+  const location = document.getElementById('newLocation').value.trim();
+  const selectedLocations = type === 'hamtning' ? getSelectedPickupLocations() : [];
+
+  hideCreateError();
+
+  if (!dayName || !date) {
+    showCreateError('Ange rubrik och datum.');
+    return;
+  }
+  if (type === 'hamtning' && !selectedLocations.length) {
+    showCreateError('Välj minst ett hämtställe.');
+    return;
+  }
+
+  try {
+    isCreatingEvent = true;
+    btn.disabled = true;
+    await api('/rest/v1/events', {
+      method: 'POST',
+      headers: getHeaders(true, 'return=minimal'),
+      body: JSON.stringify([{
+        day_name: dayName,
+        date,
+        time: time || null,
+        location: location || null,
+        active: true,
+        max_volunteers: 7,
+        activity_type: type,
+        allowed_pickup_locations: selectedLocations,
+        queue_enabled: false,
+        queue_open: false,
+        queue_assigned: false,
+        queue_assigned_at: null
+      }])
+    });
+
+    document.getElementById('newActivityType').value = 'utdelning';
+    document.getElementById('newDayName').value = '';
+    document.getElementById('newDate').value = '';
+    document.getElementById('newTime').value = '';
+    document.getElementById('newLocation').value = '';
+    renderPickupOptions();
+
+    const success = document.getElementById('createSuccess');
+    success.classList.add('show');
+    setTimeout(() => success.classList.remove('show'), 2500);
+
+    await reloadAll();
+    switchTab(1);
+  } catch (err) {
+    showCreateError('Kunde inte skapa aktivitet: ' + err.message);
+  } finally {
+    isCreatingEvent = false;
+    btn.disabled = false;
+  }
+}
+function renderMgmtList() {
+  const el = document.getElementById('mgmtList');
+  if (!eventsCache.length) {
+    el.innerHTML = '<div class="empty-state">Inga aktiviteter skapade än.</div>';
+    return;
+  }
+  el.innerHTML = eventsCache.map(ev => `
+    <div class="mgmt-item">
+      <div class="mgmt-top">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:900;">${escapeHtml(ev.day_name)}</div>
+          <div style="font-size:12px;color:#6b7280;">${escapeHtml(fmtDate(ev.date))}</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:4px;">${isPickupEvent(ev) ? 'Hämtning från partner/donatörer' : 'Matutdelning'}${ev.time ? ' · ' + escapeHtml(ev.time) : ''}${ev.location ? ' · ' + escapeHtml(ev.location) : ''}</div>
+          ${isPickupEvent(ev) ? '<span class="tag">Hämtning</span>' : '<span class="tag">Matutdelning</span>'}
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+          <button class="mini-btn ${ev.active !== false ? 'active' : ''}" type="button" onclick="toggleEventActive('${ev.id}')">${ev.active !== false ? 'Aktiv' : 'Inaktiv'}</button>
+          <button class="mini-btn delete" type="button" onclick="deleteEvent('${ev.id}')">Ta bort</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+async function toggleEventActive(id) {
+  ensureAdmin();
+  const ev = eventsCache.find(e => e.id === id);
+  await api('/rest/v1/events?id=eq.' + encodeURIComponent(id), {
+    method: 'PATCH',
+    headers: getHeaders(true, 'return=minimal'),
+    body: JSON.stringify({ active: ev.active === false ? true : false })
+  });
+  await reloadAll();
+}
+async function deleteEvent(id) {
+  ensureAdmin();
+  if (!confirm('Ta bort denna aktivitet?')) return;
+  await api('/rest/v1/events?id=eq.' + encodeURIComponent(id), {
+    method: 'DELETE',
+    headers: getHeaders(true, 'return=minimal')
+  });
+  await reloadAll();
+}
+async function init() {
+  try {
+    await reloadAll();
+    restoreAdminSession();
+    renderPickupOptions();
+  } catch (err) {
+    document.getElementById('eventsList').innerHTML = '<div class="empty-state">Kunde inte ladda data.<br>' + escapeHtml(err.message) + '</div>';
+  }
+}
+init();
+</script>
 </body>
 </html>
