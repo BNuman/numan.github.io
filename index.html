@@ -113,7 +113,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1>Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D5 – digital kö</div>
+    <div class="version">Version D6 – digital kö</div>
   </div>
 
   
@@ -262,7 +262,7 @@
 
         <div class="input-group">
           <div class="section-label">Välj digital kö</div>
-          <select id="adminQueueSelect" onchange="renderQueueAdminPanel()"><option value="">— Välj kö —</option></select>
+          <select id="adminQueueSelect" onchange="renderQueueAdminPanel(); startAdminQueuePolling()"><option value="">— Välj kö —</option></select>
         </div>
         <div class="queue-status-box" id="queueAdminSummary"><div class="empty-state">Ingen kö vald.</div></div>
         <div id="queueLinkWrap" class="hidden" style="margin-top:12px;">
@@ -306,6 +306,7 @@ let queueEntriesCache = [];
 let isCreatingQueue = false;
 let isJoiningQueue = false;
 let queuePollTimer = null;
+let adminQueuePollTimer = null;
 let isCreatingEvent = false;
 let selectedEventId = null;
 
@@ -363,6 +364,28 @@ function startQueuePolling() {
       renderQueueView();
     } catch (e) {
       console.error('Queue polling error', e);
+    }
+  }, 2000);
+}
+
+function stopAdminQueuePolling() {
+  if (adminQueuePollTimer) {
+    clearInterval(adminQueuePollTimer);
+    adminQueuePollTimer = null;
+  }
+}
+function startAdminQueuePolling() {
+  stopAdminQueuePolling();
+  const selectedQueue = document.getElementById('adminQueueSelect')?.value;
+  if (!selectedQueue) return;
+
+  adminQueuePollTimer = setInterval(async () => {
+    try {
+      await loadQueueSessions();
+      await loadQueueEntries();
+      renderQueueAdminPanel();
+    } catch (e) {
+      console.error('Admin queue polling error', e);
     }
   }, 2000);
 }
@@ -1041,13 +1064,17 @@ function switchTab(n) {
     document.getElementById('tabBtn' + i).classList.toggle('active', i === n);
     document.getElementById('tab' + i).classList.toggle('hidden', i !== n);
   });
+
   if (n === 2) {
+    stopAdminQueuePolling();
     populateAdminEventSelect();
     renderSignupAdminList();
-  }
-  if (n === 3) {
+  } else if (n === 3) {
     populateQueueSelect();
     renderQueueAdminPanel();
+    startAdminQueuePolling();
+  } else {
+    stopAdminQueuePolling();
   }
 }
 function showCreateError(text) {
@@ -1254,6 +1281,7 @@ function renderQueueAdminPanel() {
   if (!summary || !list || !linkWrap || !linkBox) return;
 
   if (!queueId) {
+    stopAdminQueuePolling();
     summary.innerHTML = '<div class="empty-state">Ingen kö vald.</div>';
     list.innerHTML = '<div class="empty-state">Ingen kö vald.</div>';
     linkWrap.classList.add('hidden');
@@ -1357,28 +1385,34 @@ async function assignQueueNumbers() {
   const queueId = document.getElementById('adminQueueSelect')?.value;
   if (!queueId) { alert('Välj en kö först.'); return; }
 
-  const waiting = getQueueEntriesForSession(queueId).filter(r => r.status === 'waiting');
+  const waiting = getQueueEntriesForSession(queueId)
+    .filter(r => r.status === 'waiting')
+    .slice()
+    .sort((a, b) => new Date(a.joined_at) - new Date(b.joined_at));
+
   if (!waiting.length) { alert('Det finns inga väntande personer att tilldela.'); return; }
   if (!confirm('Slumpa köplatser för alla som väntar i kön?')) return;
 
   const existing = getQueueEntriesForSession(queueId).filter(r => r.queue_number != null);
   const maxExisting = existing.length ? Math.max(...existing.map(r => Number(r.queue_number) || 0)) : 0;
 
-  // Starkt slumpad ordning med Web Crypto i stället för vanlig Math.random
-  const shuffled = waiting.map(row => {
+  // Skapa nummerpoolen som sena deltagare ska få från slutet och slumpa själva numren.
+  const ticketNumbers = Array.from({ length: waiting.length }, (_, i) => maxExisting + i + 1);
+  for (let i = ticketNumbers.length - 1; i > 0; i--) {
     const arr = new Uint32Array(1);
     crypto.getRandomValues(arr);
-    return { row, rnd: arr[0] };
-  }).sort((a, b) => a.rnd - b.rnd).map(x => x.row);
+    const j = arr[0] % (i + 1);
+    [ticketNumbers[i], ticketNumbers[j]] = [ticketNumbers[j], ticketNumbers[i]];
+  }
 
   try {
-    // Kör uppdatering en och en i den slumpade ordningen så att tilldelningen blir tydlig och stabil
-    for (let i = 0; i < shuffled.length; i++) {
-      await api('/rest/v1/queue_entries?id=eq.' + encodeURIComponent(shuffled[i].id), {
+    // Behåll väntelistan i registreringsordning men ge varje person ett slumpat könummer.
+    for (let i = 0; i < waiting.length; i++) {
+      await api('/rest/v1/queue_entries?id=eq.' + encodeURIComponent(waiting[i].id), {
         method: 'PATCH',
         headers: getHeaders(true, 'return=minimal'),
         body: JSON.stringify({
-          queue_number: maxExisting + i + 1,
+          queue_number: ticketNumbers[i],
           assigned_at: new Date().toISOString(),
           status: 'assigned'
         })
