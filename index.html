@@ -105,6 +105,15 @@
     .queue-chip.left{background:#FDECEA;color:#C0392B}
     .queue-create-wrap{border:2px dashed #d1e8da;border-radius:16px;background:#fbfdfb;padding:14px;margin-bottom:14px}
 
+  
+    .helper-box{background:#f3f8f4;border:2px solid #d7eadc;border-radius:16px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.55;color:#475569;font-weight:700}
+    .helper-title{font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#2E7D4F;margin-bottom:6px}
+    .sticky-cta{position:sticky;bottom:10px;z-index:5}
+    .status-open{color:#2E7D4F}
+    .status-warn{color:#E07B2E}
+    .status-closed{color:#C0392B}
+    .queue-note{margin-top:10px;font-size:12px;color:#64748b;font-weight:700}
+
   </style>
 </head>
 <body>
@@ -113,12 +122,18 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1>Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D7 – digital kö</div>
+    <div class="version">Version D8 – digital kö</div>
   </div>
 
   
   <div class="card hidden" id="queueCard">
     <div class="section-label">Digital kö</div>
+    <div class="helper-box" style="margin-top:2px;">
+      <div class="helper-title">Så gör du</div>
+      1. Skriv ditt namn om du vill<br>
+      2. Tryck på <strong>Gå med i kön</strong><br>
+      3. Vänta tills du får ett nummer
+    </div>
     <div class="confirm-title" id="queueTitle" style="font-size:20px;margin-bottom:10px;">Registrering</div>
     <div class="queue-status-box" style="background:#f3f8f4;">
       <div id="queueStatusText" style="font-size:14px;line-height:1.6;color:#4b5563;font-weight:700;">Laddar köinformation…</div>
@@ -128,13 +143,20 @@
       <div class="section-label">Ditt namn (valfritt)</div>
       <input type="text" id="queueNameInput" placeholder="Skriv ditt namn om du vill" maxlength="50">
     </div>
+    <div class="queue-note">Du behåller din plats i kön även om du väntar här. Du behöver inte trycka igen.</div>
     <div id="queuePublicStatus" class="status-msg"></div>
-    <button class="submit-btn" type="button" id="queueJoinBtn" onclick="joinQueue()">Ställ mig i kön</button>
+    <button class="submit-btn" type="button" id="queueJoinBtn" onclick="joinQueue()">Gå med i kön</button>
     <button class="reset-btn hidden" type="button" id="queueLeaveBtn" onclick="leaveQueue()" style="margin-top:10px;">Lämna kön</button>
   </div>
 
   <div class="card">
     <div id="mainForm">
+      <div class="helper-box">
+        <div class="helper-title">Så gör du</div>
+        1. Välj aktivitet<br>
+        2. Fyll i ditt namn<br>
+        3. Klicka på knappen längst ner
+      </div>
       <div class="input-group">
         <div class="section-label">Ditt namn</div>
         <input type="text" id="nameInput" placeholder="Skriv ditt fullständiga namn…" maxlength="50" oninput="saveVolunteerName(); refreshSignupButton()">
@@ -143,7 +165,7 @@
       <div id="eventsList"></div>
       
       <div id="publicStatus" class="status-msg"></div>
-      <button class="submit-btn" type="button" id="signupBtn" onclick="submitSignup()" disabled>Jag vill hjälpa till</button>
+      <div class="sticky-cta"><button class="submit-btn" type="button" id="signupBtn" onclick="submitSignup()" disabled>Fyll i namn först</button></div>
     </div>
 
     <div class="confirm-screen hidden" id="confirmScreen">
@@ -567,7 +589,7 @@ function renderPublicEvents() {
             <div class="event-sub">${escapeHtml(fmtDate(ev.date))}</div>
             <div class="event-sub">${isPickupEvent(ev) ? 'Hämtning från partner/donatörer' : 'Matutdelning'}${ev.time ? ' · ' + escapeHtml(ev.time) : ''}${ev.location ? ' · ' + escapeHtml(ev.location) : ''}</div>
             <div class="status-line ${isFull ? 'full' : ''}">
-              ${isFull ? (isPickupEvent(ev) ? 'Fullbokad hämtning' : 'Fullbokad – reservlista gäller') : infoLine}
+              ${isFull ? (isPickupEvent(ev) ? '🔴 Fullbokad hämtning' : '🔴 Fullbokad – reservlista gäller') : (isPickupEvent(ev) ? '🟢 ' + infoLine : (volunteerAvailable <= 2 ? '🟡 ' + infoLine : '🟢 ' + infoLine))}
             </div>
             ${isPickupEvent(ev) ? '<span class="tag">Hämtning</span>' : '<span class="tag">Matutdelning</span>'}
             ${isSelected ? '<div class="selected-badge">Vald aktivitet</div>' : ''}
@@ -628,14 +650,17 @@ function refreshSignupButton() {
 
   if (!ev) {
     btn.disabled = true;
+    btn.textContent = 'Välj aktivitet först';
     return;
   }
 
   if (isPickupEvent(ev)) {
     const selectedPickup = Array.from(document.querySelectorAll('.event-card.selected .pickup-option input:checked')).length;
     btn.disabled = !(name && selectedPickup > 0);
+    btn.textContent = !name ? 'Fyll i namn först' : selectedPickup === 0 ? 'Välj hämtställe först' : 'Jag vill hjälpa till';
   } else {
     btn.disabled = !(selectedEventId && name);
+    btn.textContent = !name ? 'Fyll i namn först' : 'Jag vill hjälpa till';
   }
 }
 function showPublicStatus(text, ok = true) {
@@ -1327,7 +1352,7 @@ function renderQueueAdminPanel() {
     <div class="queue-row">
       <div style="flex:1;min-width:0;">
         <div style="font-weight:800;">${escapeHtml(row.display_name || 'Deltagare')}</div>
-        <div style="font-size:12px;color:#6b7280;margin-top:3px;">${row.has_mobile ? 'Mobil' : 'Utan mobil'} · Registrerad ${new Date(row.joined_at).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:3px;">Kom i kö: ${sorted.findIndex(x => x.id === row.id) + 1} · ${row.has_mobile ? 'Mobil' : 'Utan mobil'} · Registrerad ${new Date(row.joined_at).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
         <div class="queue-chip ${row.status === 'assigned' ? 'assigned' : row.status === 'left' ? 'left' : ''}">
@@ -1579,7 +1604,7 @@ function renderQueueView() {
     if (joinBtn) {
       joinBtn.classList.remove('hidden');
       joinBtn.disabled = !session.queue_open;
-      joinBtn.textContent = session.queue_open ? 'Ställ mig i kön' : 'Kön är inte öppen just nu';
+      joinBtn.textContent = session.queue_open ? 'Gå med i kön' : 'Kön öppnar snart';
     }
     status.textContent = session.queue_open
       ? 'Tryck nedan för att ställa dig i kön.'
@@ -1599,14 +1624,14 @@ function renderQueueView() {
   }
 
   if (entry.queue_number != null) {
-    status.textContent = 'Din köplats är:';
+    status.textContent = 'Du är nummer';
     big.textContent = entry.queue_number;
     big.classList.remove('hidden');
     if (joinBtn) joinBtn.classList.add('hidden');
     return;
   }
 
-  status.textContent = 'Du är registrerad i kön. Vänta här tills köplatserna delas ut.';
+  status.textContent = 'Du är registrerad i kön. Vi ger dig ett nummer snart.';
   big.classList.add('hidden');
   if (joinBtn) joinBtn.classList.add('hidden');
 }
