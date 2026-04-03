@@ -170,7 +170,7 @@
       <div id="tab0">
         <div class="input-group">
           <div class="section-label">Typ av aktivitet</div>
-          <select id="newActivityType">
+          <select id="newActivityType" onchange="renderCreatePickupOptions()">
             <option value="utdelning">Matutdelning</option>
             <option value="hamtning">Hämtning från partner/donatörer</option>
           </select>
@@ -190,6 +190,10 @@
         <div class="input-group">
           <div class="section-label">Plats (valfritt)</div>
           <input type="text" id="newLocation" placeholder="t.ex. Frölunda torg">
+        </div>
+        <div class="input-group hidden" id="pickupWrap">
+          <div class="section-label">Välj hämtställen</div>
+          <div id="pickupList"></div>
         </div>
         <button class="create-btn" type="button" id="createEventBtn" onclick="addEvent()">➕ Skapa aktivitet</button>
         <div class="success-msg" id="createSuccess">✅ Aktivitet skapad!</div>
@@ -1002,6 +1006,7 @@ async function init() {
   try {
     await reloadAll();
     restoreAdminSession();
+    renderCreatePickupOptions();
   } catch (err) {
     document.getElementById('eventsList').innerHTML = '<div class="empty-state">Kunde inte ladda data.<br>' + escapeHtml(err.message) + '</div>';
   }
