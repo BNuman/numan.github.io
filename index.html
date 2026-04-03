@@ -113,7 +113,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1>Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D4 – digital kö</div>
+    <div class="version">Version D5 – digital kö</div>
   </div>
 
   
@@ -1364,26 +1364,26 @@ async function assignQueueNumbers() {
   const existing = getQueueEntriesForSession(queueId).filter(r => r.queue_number != null);
   const maxExisting = existing.length ? Math.max(...existing.map(r => Number(r.queue_number) || 0)) : 0;
 
-  const shuffled = waiting.slice();
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
+  // Starkt slumpad ordning med Web Crypto i stället för vanlig Math.random
+  const shuffled = waiting.map(row => {
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    return { row, rnd: arr[0] };
+  }).sort((a, b) => a.rnd - b.rnd).map(x => x.row);
 
   try {
-    await Promise.all(
-      shuffled.map((row, idx) =>
-        api('/rest/v1/queue_entries?id=eq.' + encodeURIComponent(row.id), {
-          method: 'PATCH',
-          headers: getHeaders(true, 'return=minimal'),
-          body: JSON.stringify({
-            queue_number: maxExisting + idx + 1,
-            assigned_at: new Date().toISOString(),
-            status: 'assigned'
-          })
+    // Kör uppdatering en och en i den slumpade ordningen så att tilldelningen blir tydlig och stabil
+    for (let i = 0; i < shuffled.length; i++) {
+      await api('/rest/v1/queue_entries?id=eq.' + encodeURIComponent(shuffled[i].id), {
+        method: 'PATCH',
+        headers: getHeaders(true, 'return=minimal'),
+        body: JSON.stringify({
+          queue_number: maxExisting + i + 1,
+          assigned_at: new Date().toISOString(),
+          status: 'assigned'
         })
-      )
-    );
+      });
+    }
 
     await api('/rest/v1/queue_sessions?id=eq.' + encodeURIComponent(queueId), {
       method: 'PATCH',
