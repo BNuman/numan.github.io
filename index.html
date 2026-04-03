@@ -1,0 +1,1872 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Volontär, Hämtning & Digital kö – Humanity First Sverige</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green: #2E7D4F; --green-light: #4CAF74; --green-bg: #E8F5EE;
+      --orange: #E07B2E; --orange-light: #F59E47; --orange-bg: #FEF3E8;
+      --red: #C0392B; --red-bg: #FDECEA;
+      --blue: #1565C0; --blue-bg: #E3F0FF;
+      --gray: #6B7280; --light: #F9FAFB; --white: #FFFFFF;
+      --text: #1A2E1F; --border: #D1E8DA;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: var(--green-bg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px 60px;
+      color: var(--text);
+    }
+    .logo-area { text-align: center; margin-bottom: 22px; }
+    .logo-icon { font-size: 46px; display: block; margin-bottom: 4px; }
+    .logo-img { width: 84px; height: 84px; object-fit: contain; display: block; margin: 0 auto 6px; }
+    .org-name { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); opacity: 0.8; }
+    h1 { font-size: 25px; font-weight: 900; color: var(--text); margin-top: 4px; line-height: 1.2; }
+    .card, .admin-panel {
+      background: var(--white);
+      border-radius: 20px;
+      box-shadow: 0 4px 24px rgba(46,125,79,0.10);
+      width: 100%;
+      max-width: 420px;
+      padding: 24px 20px;
+      margin-top: 12px;
+    }
+    .section-label { font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray); margin-bottom: 9px; }
+    .input-group { margin-bottom: 16px; }
+    input[type="text"], input[type="password"], input[type="date"], select {
+      width: 100%;
+      padding: 13px 15px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 15px;
+      color: var(--text);
+      background: var(--light);
+      outline: none;
+    }
+    input:focus, select:focus { border-color: var(--green-light); background: var(--white); }
+    .events-list { margin-bottom: 18px; }
+    .event-card {
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      background: var(--light);
+      cursor: pointer;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .event-card.selected { border-color: var(--green); background: var(--green-bg); }
+    .ev-top { display: flex; align-items: center; gap: 10px; }
+    .ev-emoji { font-size: 28px; }
+    .ev-info { flex: 1; }
+    .ev-day { font-size: 17px; font-weight: 900; display: block; }
+    .ev-date { font-size: 13px; color: var(--gray); font-weight: 600; }
+    .ev-slots { font-size: 12px; font-weight: 700; margin-top: 4px; display: inline-block; }
+    .ev-type {
+      display:inline-block; margin-top:6px; padding:3px 8px; border-radius:999px;
+      font-size:11px; font-weight:800; background:var(--blue-bg); color:var(--blue);
+    }
+    .check-badge {
+      position: absolute; top: 10px; right: 10px;
+      width: 22px; height: 22px; border-radius: 50%; background: var(--green);
+      color: white; font-size: 12px; font-weight: 900;
+      display: none; align-items: center; justify-content: center;
+    }
+    .event-card.selected .check-badge { display: flex; }
+    .bar-row { margin-top: 8px; }
+    .bar-track { background: #E5E7EB; border-radius: 99px; height: 6px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 99px; background: var(--green); }
+    .bar-fill.orange { background: var(--orange); }
+    .bar-fill.red { background: var(--red); }
+    .full-badge {
+      display: inline-block; background: var(--orange-bg); color: var(--orange);
+      border-radius: 8px; padding: 2px 9px; font-size: 11px; font-weight: 800; margin-top: 4px;
+    }
+    .waitlist-notice {
+      background: var(--orange-bg); border: 2px solid var(--orange); border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 16px; font-size: 13px; font-weight: 700;
+      color: var(--orange); display: none;
+    }
+    .waitlist-notice.show { display: block; }
+    .submit-btn, .create-btn, .act-btn {
+      width: 100%; padding: 14px; border: none; border-radius: 14px;
+      background: linear-gradient(135deg, var(--green), var(--green-light));
+      color: white; font-size: 16px; font-weight: 800; cursor: pointer;
+    }
+    .submit-btn:disabled { opacity: .45; cursor: not-allowed; }
+    .submit-btn.waitlist-mode { background: linear-gradient(135deg, var(--orange), var(--orange-light)); }
+    .confirm-screen { display: none; text-align: center; }
+    .confirm-screen.show { display: block; }
+    .main-form.hidden { display: none; }
+    .confirm-icon { font-size: 58px; margin-bottom: 10px; display: block; }
+    .confirm-title { font-size: 22px; font-weight: 900; margin-bottom: 8px; }
+    .confirm-msg { font-size: 14px; color: var(--gray); line-height: 1.6; margin-bottom: 18px; }
+    .confirm-badge {
+      display: inline-block; background: var(--green-bg); border: 2px solid var(--green);
+      color: var(--green); border-radius: 12px; padding: 10px 18px; font-weight: 800; font-size: 14px;
+    }
+    .confirm-badge.waitlist { background: var(--orange-bg); border-color: var(--orange); color: var(--orange); }
+    .reset-btn, .mini-btn, .logout-btn, .attend-btn {
+      border-radius: 10px; padding: 10px 12px; cursor: pointer; font-weight: 700;
+    }
+    .reset-btn { background: none; border: 2px solid var(--border); }
+    .admin-row { text-align: center; margin-top: 16px; }
+    .admin-link { font-size: 12px; color: #A0ADB5; cursor: pointer; text-decoration: underline; font-weight: 700; }
+    .admin-panel { display: none; }
+    .admin-panel.show { display: block; }
+    .admin-content { display: none; }
+    .admin-content.show { display: block; }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .admin-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 16px; }
+    .atab {
+      flex: 1; padding: 10px 6px; border: none; background: none; cursor: pointer;
+      color: var(--gray); border-bottom: 3px solid transparent; font-weight: 700;
+    }
+    .atab.active { color: var(--green); border-bottom-color: var(--green); }
+    .mgmt-event, .admin-vol-item {
+      border: 2px solid var(--border); border-radius: 12px; padding: 12px 14px;
+      margin-bottom: 10px; background: var(--light);
+    }
+    .mgmt-event-top, .admin-vol-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .mgmt-actions, .admin-actions { display: flex; gap: 8px; }
+    .mini-btn.toggle-active { background: var(--green-bg); color: var(--green); border: none; }
+    .mini-btn.toggle-inactive { background: white; color: var(--gray); border: 1px solid var(--border); }
+    .mini-btn.del, .act-btn.danger { background: var(--red-bg); color: var(--red); }
+    .act-btn.export { background: var(--blue-bg); color: var(--blue); }
+    .vol-meta { flex: 1; }
+    .vol-avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--green), var(--green-light));
+      color: white; display: flex; align-items: center; justify-content: center; font-weight: 900;
+    }
+    .attend-btn { border: 1px solid var(--border); background: white; }
+    .attend-btn.present { background: var(--green-bg); color: var(--green); border-color: var(--green); }
+    .attend-btn.absent { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+    .empty-state { text-align: center; padding: 20px; color: #9CA3AF; }
+    .login-error, .success-msg, .status-msg { font-size: 13px; font-weight: 700; margin-top: 8px; display: none; }
+    .login-error { color: var(--red); }
+    .success-msg, .status-msg.ok { color: var(--green); }
+    .status-msg.err { color: var(--red); }
+    .show { display: block !important; }
+    .pickup-panel {
+      margin-bottom: 16px; background: var(--light); border:2px solid var(--border);
+      border-radius: 14px; padding: 14px;
+    }
+    .pickup-list { display:flex; flex-direction:column; gap:8px; }
+    .pickup-item {
+      display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border-radius:12px;
+      background:#fff; border:1px solid var(--border);
+    }
+    .pickup-item.booked {
+      background:#f3f4f6; color:#9ca3af; border-color:#e5e7eb;
+    }
+    .pickup-item input { margin-top:3px; }
+    .pickup-item small { display:block; margin-top:2px; color:var(--gray); }
+    .pickup-item.booked small { color:#9ca3af; }
+    .hint-text { font-size:13px; color:var(--gray); line-height:1.5; margin-bottom:10px; }
+    .tag-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+    .tag {
+      display:inline-block; padding:4px 8px; border-radius:999px; font-size:11px; font-weight:700;
+      background: var(--blue-bg); color: var(--blue);
+    }
+    .tag.disabled { background:#f3f4f6; color:#9ca3af; }
+    .hidden { display:none !important; }
+
+    .hidden { display: none !important; }
+    .queue-card { display:none; }
+    .queue-card.show { display:block; }
+    .queue-big-number {
+      font-size: 64px;
+      font-weight: 900;
+      line-height: 1;
+      margin: 10px 0 14px;
+      color: var(--green);
+      text-align: center;
+    }
+    .queue-status-box {
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      background: var(--light);
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .queue-link-box {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      background: var(--light);
+      font-size: 13px;
+      color: var(--gray);
+      word-break: break-all;
+      margin-bottom: 10px;
+    }
+    .queue-entry-row {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:2px solid var(--border);
+      background: var(--light);
+      margin-bottom:8px;
+    }
+    .queue-entry-row.left {
+      opacity: .55;
+      background: #f3f4f6;
+    }
+    .queue-entry-row.assigned {
+      border-color: var(--green);
+      background: var(--green-bg);
+    }
+    .queue-chip {
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      background: var(--blue-bg);
+      color: var(--blue);
+    }
+    .queue-chip.left { background: var(--red-bg); color: var(--red); }
+    .queue-chip.assigned { background: var(--green-bg); color: var(--green); }
+    .checkbox-row {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 12px 14px;
+      border:2px solid var(--border);
+      border-radius:12px;
+      background:var(--light);
+    }
+
+  
+.logo {
+  display:flex;
+  justify-content:center;
+  margin-bottom:10px;
+}
+.logo img {
+  width:80px;
+  height:80px;
+  object-fit:contain;
+}
+</style>
+</head>
+<body>
+  <div class="logo-area">
+    <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
+    <div class="org-name">Humanity First Sverige</div>
+    <h1>Volontär, hämtning<br />& digital kö</h1>
+  
+</div>
+
+  <div class="card queue-card" id="queueCard">
+    <div class="section-label">Digital kö</div>
+    <div class="confirm-title" id="queueEventTitle" style="font-size:20px;margin-bottom:10px;">Registrering</div>
+    <div class="queue-status-box">
+      <div id="queueStatusText" style="font-size:14px;line-height:1.6;color:var(--gray);">Laddar köinformation…</div>
+      <div id="queueBigNumber" class="queue-big-number hidden">0</div>
+    </div>
+    <div class="input-group" id="queueNameWrap">
+      <div class="section-label">Ditt namn (valfritt)</div>
+      <input type="text" id="queueNameInput" placeholder="Skriv ditt namn om du vill" maxlength="50" />
+    </div>
+    <div id="queuePublicStatus" class="status-msg"></div>
+    <button class="submit-btn" id="queueJoinBtn">Jag är här</button>
+    <button class="reset-btn hidden" id="queueLeaveBtn" style="width:100%;margin-top:10px;">Lämna kön</button>
+  </div>
+
+  <div class="card">
+
+
+  <div class="card">
+    <div class="main-form" id="mainForm">
+      <div class="input-group">
+        <div class="section-label">Ditt namn</div>
+        <input type="text" id="nameInput" placeholder="Skriv ditt fullständiga namn…" maxlength="50" />
+      </div>
+
+      <div class="section-label">Välj aktivitet</div>
+      <div class="events-list" id="eventsList"></div>
+
+      <div class="waitlist-notice" id="waitlistNotice">
+        ⚠️ Alla 7 platser är fyllda — du hamnar på reservlistan om du anmäler dig.
+      </div>
+
+      <div id="pickupSelectorWrap" class="pickup-panel hidden"></div>
+
+      <div id="publicStatus" class="status-msg"></div>
+      <button class="submit-btn" id="submitBtn" disabled>Jag vill hjälpa till</button>
+    </div>
+
+    <div class="confirm-screen" id="confirmScreen">
+      <span class="confirm-icon" id="confirmIcon">🎉</span>
+      <div class="confirm-title" id="confirmTitle">Du är anmäld!</div>
+      <div class="confirm-msg" id="confirmMsg"></div>
+      <div class="confirm-badge" id="confirmBadge"></div>
+      <br /><br />
+      <button class="reset-btn" id="resetBtn">← Anmäl igen</button>
+    </div>
+  </div>
+
+  <div class="admin-row" style="margin-top:10px;">
+    <span class="admin-link" id="cancelToggleLink" onclick="toggleCancel()">❌ Avanmäl mig</span>
+  </div>
+
+  <div class="card" id="cancelCard" style="display:none;">
+    <div class="section-label" style="margin-bottom:12px;">Avanmäl dig</div>
+    <div class="input-group">
+      <input type="text" id="cancelName" placeholder="Skriv ditt namn exakt som du anmälde dig…" maxlength="50" />
+    </div>
+    <div class="input-group">
+      <select id="cancelEventSelect">
+        <option value="">— Välj aktivitet —</option>
+      </select>
+    </div>
+    <div id="cancelMsg" class="status-msg"></div>
+    <button class="submit-btn" id="cancelBtn" style="font-size:15px;padding:13px;">Ta bort min anmälan</button>
+  </div>
+
+  <div class="admin-row">
+    <span class="admin-link" id="toggleAdminLink" onclick="toggleAdmin()">🔐 Admin-inloggning</span>
+  </div>
+
+  <div class="admin-panel" id="adminPanel">
+    <div id="adminLogin">
+      <div class="section-label" style="margin-bottom:12px;">Admin e-post</div>
+      <input type="text" id="adminEmailInput" placeholder="admin@dinorg.se" />
+      <div class="section-label" style="margin:12px 0 12px;">Adminlösenord</div>
+      <input type="password" id="adminPwInput" placeholder="Ange lösenord…" />
+      <div class="login-error" id="loginError">❌ Kunde inte logga in. Kontrollera e-post och lösenord.</div>
+      <br /><br />
+      <button class="submit-btn" id="loginBtn" onclick="doLogin()" style="font-size:15px;padding:13px;">Logga in</button>
+    </div>
+
+    <div class="admin-content" id="adminContent">
+      <div class="admin-header">
+        <div style="font-weight:900;">⚙️ Admin</div>
+        <button class="logout-btn" id="logoutBtn">Logga ut</button>
+      </div>
+
+      <div class="admin-tabs">
+        <button class="atab active" id="atab0">➕ Skapa aktivitet</button>
+        <button class="atab" id="atab1">📅 Hantera</button>
+        <button class="atab" id="atab2">📋 Anmälningar</button>
+        <button class="atab" id="atab3">🎟️ Digital kö</button>
+      </div>
+
+      <div id="tab0">
+        <div class="input-group">
+          <div class="section-label">Typ av aktivitet</div>
+          <select id="newActivityType">
+            <option value="utdelning">Matutdelning</option>
+            <option value="hamtning">Hämtning från partner/donatörer</option>
+          </select>
+        </div>
+        <div class="input-group">
+          <div class="section-label">Rubrik</div>
+          <input type="text" id="newDayName" placeholder="t.ex. Torsdag 18 maj eller Hämtning söndag" />
+        </div>
+        <div class="input-group">
+          <div class="section-label">Datum</div>
+          <input type="date" id="newDate" />
+        </div>
+        <div class="input-group">
+          <div class="section-label">Tid (valfritt)</div>
+          <input type="text" id="newTime" placeholder="t.ex. 10:00 – 13:00" />
+        </div>
+        <div class="input-group">
+          <div class="section-label">Plats / kommentar (valfritt)</div>
+          <input type="text" id="newLocation" placeholder="t.ex. Frölunda torg" />
+        </div>
+
+        <div class="input-group">
+          <div class="checkbox-row">
+            <input type="checkbox" id="newQueueEnabled" />
+            <label for="newQueueEnabled" style="font-size:14px;font-weight:700;color:var(--text);">Aktivera digital kö med QR för denna aktivitet</label>
+          </div>
+        </div>
+
+        <div class="input-group hidden" id="adminPickupWrap">
+          <div class="section-label">Välj vilka ställen som ska gå att hämta från</div>
+          <div class="pickup-panel" style="margin-bottom:0;">
+            <div class="pickup-list" id="adminPickupList"></div>
+          </div>
+        </div>
+
+        <button class="create-btn" id="createEventBtn">➕ Skapa aktivitet</button>
+        <div class="success-msg" id="createSuccess">✅ Aktivitet skapad!</div>
+      </div>
+
+      <div id="tab1" style="display:none;">
+        <div id="mgmtList"></div>
+      </div>
+
+      <div id="tab2" style="display:none;">
+        <div class="input-group">
+          <div class="section-label">Välj aktivitet</div>
+          <select id="adminEventSelect">
+            <option value="">— Välj aktivitet —</option>
+          </select>
+        </div>
+        <div id="adminVolList"></div>
+        <div class="admin-actions">
+          <button class="act-btn export" id="exportBtn">⬇️ Exportera CSV</button>
+          <button class="act-btn danger" id="clearEventBtn">🗑️ Rensa aktivitet</button>
+        </div>
+      </div>
+
+      <div id="tab3" style="display:none;">
+        <div class="input-group">
+          <div class="section-label">Välj aktivitet med digital kö</div>
+          <select id="adminQueueEventSelect">
+            <option value="">— Välj aktivitet —</option>
+          </select>
+        </div>
+        <div id="adminQueueSummary" class="queue-status-box" style="display:none;"></div>
+        <div id="adminQueueLinkWrap" style="display:none;">
+          <div class="section-label">QR-länk att använda</div>
+          <div class="queue-link-box" id="adminQueueLinkBox"></div>
+        </div>
+        <div class="admin-actions">
+          <button class="act-btn export" id="queueOpenBtn">🟢 Öppna kö</button>
+          <button class="act-btn export" id="queueAssignBtn">🎲 Slumpa köplatser</button>
+        </div>
+        <div class="admin-actions" style="margin-top:8px;">
+          <button class="act-btn export" id="queueAddManualBtn">➕ Lägg till utan mobil</button>
+          <button class="act-btn danger" id="queueClearBtn">🗑️ Rensa hela kön</button>
+          <button class="act-btn danger" id="queueRefreshBtn">↻ Uppdatera kö</button>
+        </div>
+        <div id="adminQueueList" style="margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://azmvdeynrqaldlqsmwkt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXZkZXlucnFhbGRscXNtd2t0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNjAxODYsImV4cCI6MjA5MDczNjE4Nn0.GTKzntDmk4bV1bomnzPPr3Xs0IuwqjuoIv7XSvi3F9M';
+    const MAX = 7;
+    const PICKUP_LOCATIONS = [
+      "Brogyllen Landala",
+      "Hemköp Guldheden",
+      "Willys Sten Sturegatan",
+      "Willys Heden",
+      "Willys Majorna",
+      "Dahls Sisjön",
+      "Willys Påvelund",
+      "Willys Kaverös",
+      "Willys Tuve",
+      "Willys Hemma Torslanda",
+      "Willys Torslanda",
+      "SockerMajas Torslanda",
+      "Restaurang Kalimera Torslanda"
+    ];
+
+    let selectedEventId = null;
+    let eventsCache = [];
+    let signupsCache = [];
+    const ADMIN_SESSION_KEY = 'hf_admin_session_v3';
+    const QUEUE_STORAGE_KEY = 'hf_queue_entries_v3';
+    let adminSession = JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY) || 'null');
+    let queueEntriesCache = [];
+
+    function fmtDate(ds) {
+      if (!ds) return '';
+      return new Date(ds + 'T12:00:00').toLocaleDateString('sv-SE', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function normalizeEvent(ev) {
+      return {
+        ...ev,
+        activity_type: ev.activity_type || 'utdelning',
+        allowed_pickup_locations: Array.isArray(ev.allowed_pickup_locations) ? ev.allowed_pickup_locations : [],
+        queue_enabled: !!ev.queue_enabled,
+        queue_open: !!ev.queue_open,
+        queue_assigned: !!ev.queue_assigned,
+        queue_assigned_at: ev.queue_assigned_at || null
+      };
+    }
+
+    function normalizeSignup(s) {
+      const selected = Array.isArray(s.selected_pickup_locations)
+        ? s.selected_pickup_locations
+        : Array.isArray(s.selected_locations)
+          ? s.selected_locations
+          : [];
+      return {
+        ...s,
+        selected_pickup_locations: selected,
+        selected_locations: selected
+      };
+    }
+
+    function normalizeQueueEntry(q) {
+      return {
+        ...q,
+        has_mobile: q.has_mobile !== false,
+        queue_number: q.queue_number == null ? null : Number(q.queue_number),
+        status: q.status || 'waiting'
+      };
+    }
+
+    function isPickupEvent(ev) {
+      return ev && ev.activity_type === 'hamtning';
+    }
+
+    function getSelectedEvent() {
+      return eventsCache.find(e => e.id === selectedEventId) || null;
+    }
+
+    function isQueueMode() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('queue') === '1' || !!params.get('eventId');
+    }
+
+    function getQueueEventIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('eventId') || '';
+    }
+
+    function getStoredQueueMap() {
+      try {
+        return JSON.parse(localStorage.getItem(QUEUE_STORAGE_KEY) || '{}');
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function setStoredQueueEntry(eventId, entryId) {
+      const map = getStoredQueueMap();
+      map[eventId] = entryId;
+      localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(map));
+    }
+
+    function removeStoredQueueEntry(eventId) {
+      const map = getStoredQueueMap();
+      delete map[eventId];
+      localStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(map));
+    }
+
+    function getStoredQueueEntryId(eventId) {
+      const map = getStoredQueueMap();
+      return map[eventId] || '';
+    }
+
+    function getQueueEntriesForEvent(eventId) {
+      return queueEntriesCache.filter(q => q.event_id === eventId && q.status !== 'left');
+    }
+
+    function shuffleArray(items) {
+      const arr = [...items];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function getQueueEventLink(eventId) {
+      const url = new URL(window.location.href);
+      url.search = '';
+      url.searchParams.set('queue', '1');
+      url.searchParams.set('eventId', eventId);
+      return url.toString();
+    }
+
+
+    function getAllowedPickupLocations(ev) {
+      return Array.isArray(ev?.allowed_pickup_locations) ? ev.allowed_pickup_locations : [];
+    }
+
+    function renderAdminPickupStatus(eventId) {
+      const ev = eventsCache.find(e => e.id === eventId);
+      const allowed = getAllowedPickupLocations(ev);
+      if (!allowed.length) return '';
+
+      const bookedMap = {};
+      signupsCache
+        .filter(s => s.event_id === eventId && !s.is_waitlist)
+        .forEach(s => {
+          const selected = Array.isArray(s.selected_pickup_locations)
+            ? s.selected_pickup_locations
+            : Array.isArray(s.selected_locations)
+              ? s.selected_locations
+              : [];
+          selected.forEach(loc => {
+            bookedMap[loc] = s.name;
+          });
+        });
+
+      return `
+        <div style="margin-top:14px;">
+          <div class="section-label">Status för hämtställen</div>
+          ${allowed.map(loc => {
+            const bookedBy = bookedMap[loc];
+            const isBooked = !!bookedBy;
+            return `
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--border);border-radius:12px;background:${isBooked ? '#F9FAFB' : 'var(--light)'};margin-bottom:8px;">
+                <div style="font-size:13px;font-weight:700;line-height:1.4;">${escapeHtml(loc)}</div>
+                <div style="font-size:12px;font-weight:800;color:${isBooked ? 'var(--orange)' : 'var(--green)'};text-align:right;">
+                  ${isBooked ? 'Bokad av ' + escapeHtml(bookedBy) : 'Ledig'}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    function getBookedPickupLocations(eventId) {
+      const booked = new Set();
+      signupsCache
+        .filter(s => s.event_id === eventId && !s.is_waitlist)
+        .forEach(s => {
+          const selected = Array.isArray(s.selected_pickup_locations)
+            ? s.selected_pickup_locations
+            : Array.isArray(s.selected_locations)
+              ? s.selected_locations
+              : [];
+          selected.forEach(loc => booked.add(loc));
+        });
+      return booked;
+    }
+
+    function countConfirmed(eventId) {
+      return signupsCache.filter(s => s.event_id === eventId && !s.is_waitlist).length;
+    }
+
+    function countWaitlist(eventId) {
+      return signupsCache.filter(s => s.event_id === eventId && s.is_waitlist).length;
+    }
+
+    function isSessionExpired(session) {
+      if (!session || !session.expires_at) return true;
+      return (Date.now() / 1000) >= Number(session.expires_at);
+    }
+
+    function clearAdminSession() {
+      adminSession = null;
+      localStorage.removeItem(ADMIN_SESSION_KEY);
+      const loginBox = document.getElementById('adminLogin');
+      const contentBox = document.getElementById('adminContent');
+      if (loginBox && contentBox) {
+        loginBox.style.display = 'block';
+        contentBox.classList.remove('show');
+      }
+    }
+
+    function getHeaders(useAdmin = false, prefer = '') {
+      const headers = {
+        'apikey': SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json'
+      };
+
+      let token = SUPABASE_ANON_KEY;
+      if (useAdmin) {
+        if (isSessionExpired(adminSession)) {
+          clearAdminSession();
+          throw new Error('Admin-sessionen har gått ut. Logga in igen.');
+        }
+        token = adminSession.access_token;
+      }
+
+      headers['Authorization'] = 'Bearer ' + token;
+      if (prefer) headers['Prefer'] = prefer;
+      return headers;
+    }
+
+    async function api(path, options = {}) {
+      const res = await fetch(SUPABASE_URL + path, { cache: 'no-store', ...options });
+      const text = await res.text();
+      let data = null;
+      try { data = text ? JSON.parse(text) : null; } catch (e) { data = text; }
+      if (!res.ok) {
+        const msg = data?.message || data?.error_description || data?.msg || text || ('HTTP ' + res.status);
+        throw new Error(msg);
+      }
+      return data;
+    }
+
+    async function loadEvents() {
+      const data = await api('/rest/v1/events?select=*&order=date.asc', {
+        headers: getHeaders(false)
+      }) || [];
+      eventsCache = data.map(normalizeEvent);
+    }
+
+    async function loadSignups() {
+      const data = await api('/rest/v1/signups?select=*&order=created_at.asc', {
+        headers: getHeaders(false)
+      }) || [];
+      signupsCache = data.map(normalizeSignup);
+    }
+
+    async function loadQueueEntries() {
+      const data = await api('/rest/v1/queue_entries?select=*&order=joined_at.asc', {
+        headers: getHeaders(false)
+      }) || [];
+      queueEntriesCache = data.map(normalizeQueueEntry);
+    }
+
+    async function reloadAll() {
+  const selectedAdminEvent = document.getElementById('adminEventSelect')?.value || '';
+  const selectedQueueEvent = document.getElementById('adminQueueEventSelect')?.value || '';
+
+  await Promise.all([
+    loadEvents(),
+    loadSignups(),
+    loadQueueEntries()
+  ]);
+
+  renderPublicEvents();
+  renderMgmtList();
+  populateAdminSelect();
+  populateQueueAdminSelect();
+
+  if (selectedAdminEvent) {
+    const adminSelect = document.getElementById('adminEventSelect');
+    if ([...adminSelect.options].some(o => o.value === selectedAdminEvent)) {
+      adminSelect.value = selectedAdminEvent;
+    }
+    renderSignupList();
+  }
+
+  if (selectedQueueEvent) {
+    const queueSelect = document.getElementById('adminQueueEventSelect');
+    if ([...queueSelect.options].some(o => o.value === selectedQueueEvent)) {
+      queueSelect.value = selectedQueueEvent;
+    }
+    renderQueueAdminList();
+  }
+
+  renderQueuePublicState();
+}
+
+    function renderPublicEvents() {
+      const active = eventsCache.filter(e => e.active);
+      const el = document.getElementById('eventsList');
+
+      if (!active.length) {
+        el.innerHTML = '<div class="empty-state">Ingen aktivitet just nu.</div>';
+        document.getElementById('submitBtn').disabled = true;
+        return;
+      }
+
+      let html = '';
+      active.forEach(ev => {
+        const sel = selectedEventId === ev.id ? ' selected' : '';
+        const extra = [ev.time, ev.location].filter(Boolean).join(' · ');
+        const emoji = isPickupEvent(ev) ? '🚚' : '🍽️';
+        const typeText = (isPickupEvent(ev) ? 'Hämtning från partner/donatörer' : 'Matutdelning') + (ev.queue_enabled ? ' · Digital kö aktiv' : '');
+
+        let infoText = '';
+        let pct = 0;
+        let barCls = '';
+
+        if (isPickupEvent(ev)) {
+          const total = getAllowedPickupLocations(ev).length;
+          const booked = getBookedPickupLocations(ev.id).size;
+          const available = Math.max(0, total - booked);
+          pct = total ? Math.min(100, (booked / total) * 100) : 0;
+          barCls = pct >= 100 ? ' red' : pct >= 70 ? ' orange' : '';
+          infoText = total
+            ? (available === 0
+                ? '<span class="full-badge" style="background:#FDECEA;color:#C0392B;">Alla hämtställen är redan bokade</span>'
+                : `<span class="ev-slots" style="color:${available <= 2 ? 'var(--orange)' : 'var(--green)'}">${available} av ${total} hämtställen lediga</span>`)
+            : '<span class="full-badge">Inga hämtställen valda ännu</span>';
+        } else {
+          const cnt = countConfirmed(ev.id);
+          const left = Math.max(0, MAX - cnt);
+          pct = Math.min(100, (cnt / MAX) * 100);
+          barCls = pct >= 100 ? ' red' : pct >= 70 ? ' orange' : '';
+          infoText = cnt >= MAX
+            ? '<span class="full-badge">Fullt - reservlista öppen</span>'
+            : `<span class="ev-slots" style="color:${left <= 2 ? 'var(--orange)' : 'var(--green)'}">${left} av ${MAX} platser kvar</span>`;
+        }
+
+        html += `
+          <div class="event-card${sel}" data-eid="${ev.id}">
+            <div class="check-badge">✓</div>
+            <div class="ev-top">
+              <span class="ev-emoji">${emoji}</span>
+              <div class="ev-info">
+                <span class="ev-day">${escapeHtml(ev.day_name)}</span>
+                <span class="ev-date">${fmtDate(ev.date)}${extra ? ' · ' + escapeHtml(extra) : ''}</span>
+                <span class="ev-type">${typeText}</span><br />
+                ${infoText}
+              </div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-track"><div class="bar-fill${barCls}" style="width:${pct}%"></div></div>
+            </div>
+          </div>`;
+      });
+
+      el.innerHTML = html;
+      document.querySelectorAll('.event-card').forEach(card => {
+        card.addEventListener('click', () => selectEvent(card.getAttribute('data-eid')));
+      });
+      refreshWaitlistNotice();
+    }
+
+    function selectEvent(eventId) {
+      selectedEventId = eventId;
+      renderPublicEvents();
+      renderPublicPickupSelector();
+      refreshSubmitBtn();
+    }
+
+    function refreshWaitlistNotice() {
+      const wn = document.getElementById('waitlistNotice');
+      const ev = getSelectedEvent();
+      if (!ev || isPickupEvent(ev)) {
+        wn.classList.remove('show');
+        return;
+      }
+      wn.classList.toggle('show', countConfirmed(ev.id) >= MAX);
+    }
+
+    function renderPublicPickupSelector() {
+      const wrap = document.getElementById('pickupSelectorWrap');
+      const ev = getSelectedEvent();
+
+      if (!ev || !isPickupEvent(ev)) {
+        wrap.classList.add('hidden');
+        wrap.innerHTML = '';
+        return;
+      }
+
+      const allowed = getAllowedPickupLocations(ev);
+      const booked = getBookedPickupLocations(ev.id);
+
+      if (!allowed.length) {
+        wrap.classList.remove('hidden');
+        wrap.innerHTML = '<div class="section-label">Hämtställen</div><div class="hint-text">Inga hämtställen är valda ännu för denna aktivitet.</div>';
+        return;
+      }
+
+      wrap.classList.remove('hidden');
+      wrap.innerHTML = `
+        <div class="section-label">Välj var du kan hämta</div>
+        <div class="hint-text">Du kan välja flera ställen. Ställen som redan är bokade visas gråa och går inte att välja.</div>
+        <div class="pickup-list">
+          ${allowed.map(loc => {
+            const disabled = booked.has(loc);
+            return `
+              <label class="pickup-item${disabled ? ' booked' : ''}">
+                <input type="checkbox" class="pickup-choice" value="${escapeHtml(loc)}" ${disabled ? 'disabled' : ''} />
+                <div>
+                  <div>${escapeHtml(loc)}</div>
+                  <small>${disabled ? 'Redan bokat' : 'Ledigt'}</small>
+                </div>
+              </label>
+            `;
+          }).join('')}
+        </div>
+      `;
+
+      document.querySelectorAll('.pickup-choice').forEach(el => {
+        el.addEventListener('change', refreshSubmitBtn);
+      });
+    }
+
+    function getSelectedPickupChoices() {
+      return Array.from(document.querySelectorAll('.pickup-choice:checked')).map(el => el.value);
+    }
+
+    function refreshSubmitBtn() {
+      const name = document.getElementById('nameInput').value.trim();
+      const btn = document.getElementById('submitBtn');
+      const ev = getSelectedEvent();
+      let disabled = !(name && selectedEventId);
+
+      if (ev && isPickupEvent(ev)) {
+        disabled = disabled || getSelectedPickupChoices().length === 0;
+        btn.textContent = 'Jag vill hjälpa till';
+        btn.classList.remove('waitlist-mode');
+      } else {
+        const isWaitlist = ev && countConfirmed(ev.id) >= MAX;
+        btn.textContent = isWaitlist ? 'Skriv upp mig som reserv' : 'Jag vill hjälpa till';
+        btn.classList.toggle('waitlist-mode', !!isWaitlist);
+      }
+
+      btn.disabled = disabled;
+    }
+
+    async function submitSignup() {
+      const name = document.getElementById('nameInput').value.trim();
+      const ev = getSelectedEvent();
+      if (!name || !ev) return;
+
+      const selectedPickupLocations = isPickupEvent(ev) ? getSelectedPickupChoices() : [];
+
+      try {
+        const result = await api('/rest/v1/rpc/signup_volunteer_v2', {
+          method: 'POST',
+          headers: getHeaders(false),
+          body: JSON.stringify({
+            p_event_id: ev.id,
+            p_name: name,
+            p_selected_locations: selectedPickupLocations
+          })
+        });
+
+        const row = Array.isArray(result) ? result[0] : result;
+        if (!row) {
+          showPublicStatus('Något gick fel. Försök igen.', false);
+          return;
+        }
+
+        if (row.status === 'duplicate') {
+          showPublicStatus('Du är redan anmäld till denna aktivitet.', false);
+          return;
+        }
+
+        if (row.status === 'pickup_taken') {
+          const booked = (row.booked_locations || []).join(', ');
+          showPublicStatus('Följande ställen hann bokas av någon annan: ' + booked + '. Välj andra och försök igen.', false);
+          await reloadAll();
+          return;
+        }
+
+        if (row.status === 'invalid_selection') {
+          showPublicStatus('Välj minst ett ledigt hämtställe.', false);
+          return;
+        }
+
+        await reloadAll();
+        showConfirmation(ev, name, row.status === 'waitlist', selectedPickupLocations);
+      } catch (err) {
+        showPublicStatus('Något gick fel: ' + err.message, false);
+      }
+    }
+
+    function showConfirmation(ev, name, isWait, selectedPickupLocations = []) {
+      if (isPickupEvent(ev)) {
+        document.getElementById('confirmIcon').textContent = '🚚';
+        document.getElementById('confirmTitle').textContent = 'Du är bokad för hämtning!';
+        document.getElementById('confirmMsg').textContent =
+          `Tack, ${name}! Du är bokad för ${ev.day_name} den ${fmtDate(ev.date)}` +
+          (selectedPickupLocations.length ? ` och har valt: ${selectedPickupLocations.join(', ')}.` : '.');
+        document.getElementById('confirmBadge').textContent = selectedPickupLocations.length
+          ? selectedPickupLocations.join(' • ')
+          : (ev.day_name + ' – ' + ev.date);
+        document.getElementById('confirmBadge').className = 'confirm-badge';
+      } else if (isWait) {
+        document.getElementById('confirmIcon').textContent = '📝';
+        document.getElementById('confirmTitle').textContent = 'Du står på reservlista';
+        document.getElementById('confirmMsg').textContent = `Tack, ${name}! Alla 7 platser är bokade. Du är nu på reservlistan för ${ev.day_name} ${fmtDate(ev.date)}.`;
+        document.getElementById('confirmBadge').textContent = `Reserv – ${ev.day_name} ${ev.date}`;
+        document.getElementById('confirmBadge').className = 'confirm-badge waitlist';
+      } else {
+        document.getElementById('confirmIcon').textContent = '🎉';
+        document.getElementById('confirmTitle').textContent = 'Du har fått plats!';
+        document.getElementById('confirmMsg').textContent = `Tack, ${name}! Vi ses på ${ev.day_name} den ${fmtDate(ev.date)}${ev.time ? ' kl. ' + ev.time : ''}.`;
+        document.getElementById('confirmBadge').textContent = `${ev.day_name} – ${ev.date}`;
+        document.getElementById('confirmBadge').className = 'confirm-badge';
+      }
+      document.getElementById('mainForm').classList.add('hidden');
+      document.getElementById('confirmScreen').classList.add('show');
+    }
+
+    function resetForm() {
+      selectedEventId = null;
+      document.getElementById('nameInput').value = '';
+      hidePublicStatus();
+      document.getElementById('mainForm').classList.remove('hidden');
+      document.getElementById('confirmScreen').classList.remove('show');
+      renderPublicEvents();
+      renderPublicPickupSelector();
+      refreshSubmitBtn();
+    }
+
+    function showPublicStatus(msg, ok) {
+      const el = document.getElementById('publicStatus');
+      el.textContent = msg;
+      el.className = 'status-msg show ' + (ok ? 'ok' : 'err');
+    }
+
+    function hidePublicStatus() {
+      const el = document.getElementById('publicStatus');
+      el.textContent = '';
+      el.className = 'status-msg';
+    }
+
+    function toggleAdmin() {
+      document.getElementById('adminPanel').classList.toggle('show');
+    }
+
+    async function doLogin() {
+      const email = document.getElementById('adminEmailInput').value.trim();
+      const password = document.getElementById('adminPwInput').value;
+      const errEl = document.getElementById('loginError');
+
+      errEl.classList.remove('show');
+
+      if (!email || !password) {
+        errEl.textContent = '❌ Ange e-post och lösenord.';
+        errEl.classList.add('show');
+        return;
+      }
+
+      try {
+        clearAdminSession();
+        const data = await api('/auth/v1/token?grant_type=password', {
+          method: 'POST',
+          headers: getHeaders(false),
+          body: JSON.stringify({ email, password })
+        });
+
+        adminSession = data;
+        localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(data));
+        document.getElementById('adminLogin').style.display = 'none';
+        document.getElementById('adminContent').classList.add('show');
+      } catch (err) {
+        errEl.textContent = '❌ ' + err.message;
+        errEl.classList.add('show');
+        alert('Login fel: ' + (err.message || 'Kontrollera att admin-användaren finns i v3 Supabase och att Email login är aktiverat.'));
+        document.getElementById('adminPwInput').value = '';
+      }
+    }
+
+    function doLogout() {
+      adminSession = null;
+      localStorage.removeItem(ADMIN_SESSION_KEY);
+      document.getElementById('adminLogin').style.display = 'block';
+      document.getElementById('adminContent').classList.remove('show');
+      document.getElementById('adminEmailInput').value = '';
+      document.getElementById('adminPwInput').value = '';
+      document.getElementById('loginError').classList.remove('show');
+    }
+
+    function switchTab(n) {
+      [0,1,2,3].forEach(i => {
+        const tabBtn = document.getElementById('atab' + i);
+        const tabEl = document.getElementById('tab' + i);
+        if (tabBtn) tabBtn.classList.toggle('active', i === n);
+        if (tabEl) tabEl.style.display = i === n ? 'block' : 'none';
+      });
+
+      if (n === 1) renderMgmtList();
+      if (n === 2) {
+        populateAdminSelect();
+        renderSignupList();
+      }
+      if (n === 3) {
+        populateQueueAdminSelect();
+        renderQueueAdminSummary();
+        renderQueueAdminList();
+      }
+    });
+      if (n === 1) renderMgmtList();
+      if (n === 2) renderSignupList();
+    }
+
+    function ensureAdmin() {
+      if (!adminSession || !adminSession.access_token || isSessionExpired(adminSession)) {
+        clearAdminSession();
+        alert('Du måste vara inloggad som admin.');
+        throw new Error('Admin session missing');
+      }
+    }
+
+    function renderAdminPickupOptions() {
+      const wrap = document.getElementById('adminPickupWrap');
+      const list = document.getElementById('adminPickupList');
+      const type = document.getElementById('newActivityType').value;
+
+      if (type !== 'hamtning') {
+        wrap.classList.add('hidden');
+        list.innerHTML = '';
+        return;
+      }
+
+      wrap.classList.remove('hidden');
+      list.innerHTML = PICKUP_LOCATIONS.map(loc => `
+        <label class="pickup-item">
+          <input type="checkbox" class="admin-pickup-choice" value="${escapeHtml(loc)}" />
+          <div>
+            <div>${escapeHtml(loc)}</div>
+            <small>Visa detta ställe för volontärerna</small>
+          </div>
+        </label>
+      `).join('');
+    }
+
+    function getAdminSelectedPickupLocations() {
+      return Array.from(document.querySelectorAll('.admin-pickup-choice:checked')).map(el => el.value);
+    }
+
+    async function addEvent() {
+      ensureAdmin();
+      const activityType = document.getElementById('newActivityType').value;
+      const dayName = document.getElementById('newDayName').value.trim();
+      const date = document.getElementById('newDate').value;
+      const time = document.getElementById('newTime').value.trim();
+      const location = document.getElementById('newLocation').value.trim();
+      const queueEnabled = document.getElementById('newQueueEnabled').checked;
+      const allowedPickupLocations = activityType === 'hamtning' ? getAdminSelectedPickupLocations() : [];
+
+      if (!dayName || !date) {
+        alert('Ange rubrik och datum.');
+        return;
+      }
+
+      if (activityType === 'hamtning' && allowedPickupLocations.length === 0) {
+        alert('Välj minst ett hämtställe för denna hämtaktivitet.');
+        return;
+      }
+
+      try {
+        await api('/rest/v1/events', {
+          method: 'POST',
+          headers: getHeaders(false, 'return=minimal'),
+          body: JSON.stringify([{
+            day_name: dayName,
+            date,
+            time: time || null,
+            location: location || null,
+            active: true,
+            max_volunteers: MAX,
+            activity_type: activityType,
+            allowed_pickup_locations: allowedPickupLocations,
+            queue_enabled: queueEnabled,
+            queue_open: false,
+            queue_assigned: false,
+            queue_assigned_at: null
+          }])
+        });
+
+        document.getElementById('newActivityType').value = 'utdelning';
+        document.getElementById('newDayName').value = '';
+        document.getElementById('newDate').value = '';
+        document.getElementById('newTime').value = '';
+        document.getElementById('newLocation').value = '';
+        document.getElementById('newQueueEnabled').checked = false;
+        renderAdminPickupOptions();
+        document.getElementById('createSuccess').classList.add('show');
+        setTimeout(() => document.getElementById('createSuccess').classList.remove('show'), 2500);
+        await reloadAll();
+      } catch (err) {
+        alert('Kunde inte skapa aktivitet: ' + err.message);
+      }
+    }
+
+    function renderMgmtList() {
+      const el = document.getElementById('mgmtList');
+      if (!eventsCache.length) {
+        el.innerHTML = '<div class="empty-state">Inga aktiviteter skapade än.</div>';
+        return;
+      }
+
+      el.innerHTML = eventsCache.map(ev => {
+        const cnt = countConfirmed(ev.id);
+        const wl = countWaitlist(ev.id);
+        const extra = [ev.time, ev.location].filter(Boolean).join(' · ');
+        const typeText = isPickupEvent(ev) ? 'Hämtning från partner/donatörer' : 'Matutdelning';
+        const pickupTotal = getAllowedPickupLocations(ev).length;
+        const pickupBooked = isPickupEvent(ev) ? getBookedPickupLocations(ev.id).size : 0;
+        const pickupTags = isPickupEvent(ev) && pickupTotal
+          ? `<div class="tag-list">${getAllowedPickupLocations(ev).map(loc => `<span class="tag">${escapeHtml(loc)}</span>`).join('')}</div>`
+          : '';
+        const summaryText = isPickupEvent(ev)
+          ? `${cnt} anmälda${wl ? ' · ' + wl + ' reserv' : ''} · ${pickupBooked} av ${pickupTotal} hämtställen bokade`
+          : `${cnt} anmälda${wl ? ' · ' + wl + ' reserv' : ''}`;
+
+        return `
+          <div class="mgmt-event">
+            <div class="mgmt-event-top">
+              <div>
+                <div style="font-weight:900;">${escapeHtml(ev.day_name)} ${escapeHtml(ev.date)}</div>
+                <div style="font-size:12px;color:var(--gray);">${fmtDate(ev.date)}${extra ? ' · ' + escapeHtml(extra) : ''}</div>
+                <div style="font-size:12px;color:var(--gray);margin-top:4px;">${typeText}</div>
+                <div style="font-size:12px;color:var(--gray);margin-top:4px;">${summaryText}</div>
+                ${pickupTags}
+              </div>
+              <div class="mgmt-actions">
+                <button class="mini-btn ${ev.active ? 'toggle-active' : 'toggle-inactive'}" onclick="toggleActive('${ev.id}')">${ev.active ? 'Aktiv' : 'Inaktiv'}</button>
+                <button class="mini-btn del" onclick="deleteEvent('${ev.id}')">Ta bort</button>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    async function toggleActive(id) {
+      ensureAdmin();
+      const ev = eventsCache.find(e => e.id === id);
+      if (!ev) return;
+      try {
+        await api('/rest/v1/events?id=eq.' + encodeURIComponent(id), {
+          method: 'PATCH',
+          headers: getHeaders(true, 'return=minimal'),
+          body: JSON.stringify({ active: !ev.active })
+        });
+        await reloadAll();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function deleteEvent(id) {
+      ensureAdmin();
+      if (!confirm('Ta bort denna aktivitet och alla dess anmälningar?')) return;
+      try {
+        await api('/rest/v1/signups?event_id=eq.' + encodeURIComponent(id), {
+          method: 'DELETE',
+          headers: getHeaders(true, 'return=minimal')
+        });
+        await api('/rest/v1/events?id=eq.' + encodeURIComponent(id), {
+          method: 'DELETE',
+          headers: getHeaders(true, 'return=minimal')
+        });
+        await reloadAll();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function populateAdminSelect() {
+      const sel = document.getElementById('adminEventSelect');
+      sel.innerHTML = '<option value="">— Välj aktivitet —</option>' + eventsCache.map(ev =>
+        `<option value="${ev.id}">${escapeHtml(ev.day_name)} ${escapeHtml(ev.date)} · ${isPickupEvent(ev) ? 'Hämtning' : 'Matutdelning'}${ev.active ? '' : ' (inaktiv)'}</option>`
+      ).join('');
+      renderSignupList();
+    }
+
+    function renderSignupList() {
+      const evId = document.getElementById('adminEventSelect').value;
+      const el = document.getElementById('adminVolList');
+      const ev = eventsCache.find(x => x.id === evId);
+
+      if (!evId) {
+        el.innerHTML = '<div class="empty-state">Ingen aktivitet vald.</div>';
+        return;
+      }
+
+      const rows = signupsCache.filter(s => s.event_id === evId);
+      const pickupStatusHtml = isPickupEvent(ev) ? renderAdminPickupStatus(evId) : '';
+
+      if (!rows.length) {
+        el.innerHTML = '<div class="empty-state">Inga anmälningar till denna aktivitet.</div>' + pickupStatusHtml;
+        return;
+      }
+
+      const signupHtml = rows.map(s => {
+        const btnClass = s.present === true ? 'present' : s.present === false ? 'absent' : '';
+        const btnLabel = s.present === true ? 'Här' : s.present === false ? 'Borta' : 'Markera';
+        const pickupInfo = isPickupEvent(ev) && s.selected_pickup_locations.length
+          ? `<div class="tag-list">${s.selected_pickup_locations.map(loc => `<span class="tag">${escapeHtml(loc)}</span>`).join('')}</div>`
+          : '';
+        return `
+          <div class="admin-vol-item">
+            <div class="vol-avatar">${escapeHtml(s.name.charAt(0).toUpperCase())}</div>
+            <div class="vol-meta">
+              <div style="font-weight:700;">${escapeHtml(s.name)}</div>
+              <div style="font-size:11px;color:${s.is_waitlist ? 'var(--orange)' : 'var(--gray)'};">${s.is_waitlist ? 'Reserv' : 'Du har fått plats'}</div>
+              ${pickupInfo}
+            </div>
+            <button class="attend-btn ${btnClass}" onclick="togglePresent('${s.id}')">${btnLabel}</button>
+            <button class="attend-btn" style="color:var(--red);border-color:#F5C6C2;" onclick="removeSignup('${s.id}')">X</button>
+          </div>`;
+      }).join('');
+
+      el.innerHTML = signupHtml + pickupStatusHtml;
+    }
+
+    async function togglePresent(id) {
+      ensureAdmin();
+      const row = signupsCache.find(s => s.id === id);
+      if (!row) return;
+      const next = row.present === true ? false : row.present === false ? null : true;
+      try {
+        await api('/rest/v1/signups?id=eq.' + encodeURIComponent(id), {
+          method: 'PATCH',
+          headers: getHeaders(true, 'return=minimal'),
+          body: JSON.stringify({ present: next })
+        });
+        await reloadAll();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function promoteWaitlist(eventId) {
+      const ev = eventsCache.find(e => e.id === eventId);
+      if (!ev || isPickupEvent(ev)) return;
+
+      const next = signupsCache
+        .filter(s => s.event_id === eventId && s.is_waitlist)
+        .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0];
+      if (!next) return;
+      await api('/rest/v1/signups?id=eq.' + encodeURIComponent(next.id), {
+        method: 'PATCH',
+        headers: getHeaders(true, 'return=minimal'),
+        body: JSON.stringify({ is_waitlist: false })
+      });
+    }
+
+    async function removeSignup(id) {
+      ensureAdmin();
+      const row = signupsCache.find(s => s.id === id);
+      if (!row) return;
+      const wasConfirmed = !row.is_waitlist;
+      const eventId = row.event_id;
+      try {
+        await api('/rest/v1/signups?id=eq.' + encodeURIComponent(id), {
+          method: 'DELETE',
+          headers: getHeaders(true, 'return=minimal')
+        });
+        await loadSignups();
+        if (wasConfirmed) await promoteWaitlist(eventId);
+        await reloadAll();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function toggleCancel() {
+      const card = document.getElementById('cancelCard');
+      const show = card.style.display === 'none';
+      card.style.display = show ? 'block' : 'none';
+      document.getElementById('cancelToggleLink').textContent = show ? 'Stäng' : '❌ Avanmäl mig';
+      if (show) populateCancelSelect();
+    }
+
+    function populateCancelSelect() {
+      const sel = document.getElementById('cancelEventSelect');
+      const active = eventsCache.filter(e => e.active);
+      sel.innerHTML = '<option value="">— Välj aktivitet —</option>' + active.map(ev =>
+        `<option value="${ev.id}">${escapeHtml(ev.day_name)} ${escapeHtml(ev.date)}</option>`
+      ).join('');
+    }
+
+    async function doCancel() {
+      const name = document.getElementById('cancelName').value.trim();
+      const evId = document.getElementById('cancelEventSelect').value;
+      const msgEl = document.getElementById('cancelMsg');
+      msgEl.className = 'status-msg';
+      msgEl.textContent = '';
+
+      if (!name || !evId) {
+        msgEl.textContent = 'Fyll i ditt namn och välj aktivitet.';
+        msgEl.className = 'status-msg show err';
+        return;
+      }
+
+      const row = signupsCache.find(s => s.event_id === evId && s.name.toLowerCase() === name.toLowerCase());
+      if (!row) {
+        msgEl.textContent = 'Hittade ingen anmälan med det namnet på denna aktivitet.';
+        msgEl.className = 'status-msg show err';
+        return;
+      }
+
+      try {
+        const wasConfirmed = !row.is_waitlist;
+        const eventId = row.event_id;
+        await api('/rest/v1/signups?id=eq.' + encodeURIComponent(row.id), {
+          method: 'DELETE',
+          headers: getHeaders(false, 'return=minimal')
+        });
+        await loadSignups();
+        if (wasConfirmed) await promoteWaitlist(eventId);
+        await reloadAll();
+        document.getElementById('cancelName').value = '';
+        document.getElementById('cancelEventSelect').value = '';
+        msgEl.textContent = 'Din anmälan har tagits bort.';
+        msgEl.className = 'status-msg show ok';
+      } catch (err) {
+        msgEl.textContent = 'Kunde inte ta bort anmälan: ' + err.message;
+        msgEl.className = 'status-msg show err';
+      }
+    }
+
+    function doExport() {
+      const evId = document.getElementById('adminEventSelect').value;
+      const ev = eventsCache.find(e => e.id === evId);
+      const rows = signupsCache.filter(s => !evId || s.event_id === evId);
+      if (!rows.length) {
+        alert('Inga anmälningar att exportera.');
+        return;
+      }
+
+      const lines = ['Namn,Aktivitetstyp,Rubrik,Datum,Tid,Plats,Status,Närvaro,Hämtställen,Tid'];
+      rows.forEach(s => {
+        const e = eventsCache.find(ev2 => ev2.id === s.event_id) || {};
+        const cols = [
+          s.name,
+          e.activity_type === 'hamtning' ? 'Hämtning från partner/donatörer' : 'Matutdelning',
+          e.day_name || '',
+          e.date || '',
+          e.time || '',
+          e.location || '',
+          s.is_waitlist ? 'Reserv' : 'Du har fått plats',
+          s.present === true ? 'Närvarande' : s.present === false ? 'Frånvarande' : '',
+          (s.selected_pickup_locations || []).join(' | '),
+          s.created_at ? new Date(s.created_at).toLocaleString('sv-SE') : ''
+        ];
+        lines.push(cols.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(','));
+      });
+
+      const csv = lines.join('\r\n');
+      const uri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+      const a = document.createElement('a');
+      a.href = uri;
+      a.download = 'volontarer.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    async function doClearEvent() {
+      ensureAdmin();
+      const evId = document.getElementById('adminEventSelect').value;
+      if (!evId) return;
+      if (!confirm('Rensa alla anmälningar för denna aktivitet?')) return;
+      try {
+        await api('/rest/v1/signups?event_id=eq.' + encodeURIComponent(evId), {
+          method: 'DELETE',
+          headers: getHeaders(true, 'return=minimal')
+        });
+        await reloadAll();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+
+    function populateQueueAdminSelect() {
+      const sel = document.getElementById('adminQueueEventSelect');
+      if (!sel) return;
+      const queueEvents = eventsCache.filter(ev => ev.queue_enabled);
+      sel.innerHTML = '<option value="">— Välj aktivitet —</option>' + queueEvents.map(ev =>
+        `<option value="${ev.id}">${escapeHtml(ev.day_name)} ${escapeHtml(ev.date)}</option>`
+      ).join('');
+      renderAdminQueuePanel();
+    }
+
+    function renderAdminQueuePanel() {
+      const evId = document.getElementById('adminQueueEventSelect')?.value;
+      const summaryEl = document.getElementById('adminQueueSummary');
+      const linkWrap = document.getElementById('adminQueueLinkWrap');
+      const linkBox = document.getElementById('adminQueueLinkBox');
+      const listEl = document.getElementById('adminQueueList');
+      if (!summaryEl || !listEl) return;
+
+      if (!evId) {
+        summaryEl.style.display = 'none';
+        linkWrap.style.display = 'none';
+        listEl.innerHTML = '<div class="empty-state">Välj en aktivitet ovan.</div>';
+        return;
+      }
+
+      const ev = eventsCache.find(e => e.id === evId);
+      const rows = queueEntriesCache.filter(q => q.event_id === evId);
+      const activeRows = rows.filter(q => q.status !== 'left');
+      const waiting = activeRows.filter(q => q.status === 'waiting').length;
+      const assigned = activeRows.filter(q => q.status === 'assigned').length;
+      const left = rows.filter(q => q.status === 'left').length;
+
+      summaryEl.style.display = 'block';
+      summaryEl.innerHTML = `
+        <div style="font-weight:900;font-size:15px;margin-bottom:6px;">${escapeHtml(ev?.day_name || '')}</div>
+        <div style="font-size:13px;color:var(--gray);line-height:1.6;">
+          ${ev?.queue_open ? 'Kön är öppen' : 'Kön är stängd'} ·
+          ${ev?.queue_assigned ? 'Köplatser utdelade' : 'Köplatser ej utdelade'}<br>
+          Registrerade: ${activeRows.length} · Väntar: ${waiting} · Tilldelade: ${assigned} · Lämnat: ${left}
+        </div>
+      `;
+
+      linkWrap.style.display = 'block';
+      linkBox.textContent = getQueueEventLink(evId);
+
+      if (!rows.length) {
+        listEl.innerHTML = '<div class="empty-state">Ingen har registrerat sig i kön ännu.</div>';
+        return;
+      }
+
+      const sortedRows = [...rows].sort((a, b) => {
+        const aVal = a.queue_number == null ? 99999 : a.queue_number;
+        const bVal = b.queue_number == null ? 99999 : b.queue_number;
+        if (aVal !== bVal) return aVal - bVal;
+        return new Date(a.joined_at) - new Date(b.joined_at);
+      });
+
+      listEl.innerHTML = sortedRows.map(q => `
+        <div class="queue-entry-row ${q.status}">
+          <div style="min-width:0;">
+            <div style="font-weight:800;font-size:14px;">${escapeHtml(q.display_name || 'Deltagare')}</div>
+            <div style="font-size:12px;color:var(--gray);margin-top:3px;">
+              ${q.has_mobile ? 'Mobil' : 'Utan mobil'} · Registrerad ${new Date(q.joined_at).toLocaleTimeString('sv-SE', {hour:'2-digit', minute:'2-digit'})}
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;display:flex;align-items:center;gap:8px;">
+            <div class="queue-chip ${q.status === 'assigned' ? 'assigned' : q.status === 'left' ? 'left' : ''}">
+              ${q.status === 'assigned' ? 'Köplats ' + q.queue_number : q.status === 'left' ? 'Lämnat kön' : 'Väntar'}
+            </div>
+            <button class="attend-btn" style="color:var(--red);border-color:#F5C6C2;" onclick="adminRemoveQueueEntry('${q.id}')">Ta bort</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function closeQueue() {
+      ensureAdmin();
+      const evId = document.getElementById('adminQueueEventSelect').value;
+      if (!evId) {
+        alert('Välj en aktivitet först.');
+        return;
+      }
+
+      await api('/rest/v1/events?id=eq.' + encodeURIComponent(evId), {
+        method: 'PATCH',
+        headers: getHeaders(true, 'return=minimal'),
+        body: JSON.stringify({
+          queue_open: false
+        })
+      });
+
+      await reloadAll();
+      alert('Kön är nu stängd.');
+    }
+
+    async function openQueue() {
+      ensureAdmin();
+      const evId = document.getElementById('adminQueueEventSelect').value;
+      if (!evId) {
+        alert('Välj en aktivitet först.');
+        return;
+      }
+      await api('/rest/v1/events?id=eq.' + encodeURIComponent(evId), {
+        method: 'PATCH',
+        headers: getHeaders(true, 'return=minimal'),
+        body: JSON.stringify({ queue_open: true })
+      });
+      await reloadAll();
+      alert('Kön är nu öppen.');
+    }
+
+    async function addManualQueueEntry() {
+      ensureAdmin();
+      const evId = document.getElementById('adminQueueEventSelect').value;
+      if (!evId) {
+        alert('Välj en aktivitet först.');
+        return;
+      }
+      const displayName = prompt('Skriv ett namn eller en etikett för personen utan mobil:', 'Utan mobil');
+      if (!displayName) return;
+
+      await api('/rest/v1/queue_entries', {
+        method: 'POST',
+        headers: getHeaders(true, 'return=representation'),
+        body: JSON.stringify([{
+          event_id: evId,
+          display_name: displayName.trim(),
+          has_mobile: false,
+          status: 'waiting'
+        }])
+      });
+      await reloadAll();
+    }
+
+    async function assignQueueNumbers() {
+      ensureAdmin();
+      const evId = document.getElementById('adminQueueEventSelect').value;
+      if (!evId) {
+        alert('Välj en aktivitet först.');
+        return;
+      }
+
+      const rows = queueEntriesCache.filter(q => q.event_id === evId && q.status === 'waiting');
+      if (!rows.length) {
+        alert('Det finns inga väntande personer att tilldela.');
+        return;
+      }
+
+      if (!confirm('Slumpa köplatser för alla som väntar i kön?')) return;
+
+      const existingAssigned = queueEntriesCache
+        .filter(q => q.event_id === evId && q.queue_number != null);
+
+      const maxExistingNumber = existingAssigned.length
+        ? Math.max(...existingAssigned.map(q => Number(q.queue_number) || 0))
+        : 0;
+
+      const shuffled = shuffleArray(rows);
+      for (let i = 0; i < shuffled.length; i++) {
+        await api('/rest/v1/queue_entries?id=eq.' + encodeURIComponent(shuffled[i].id), {
+          method: 'PATCH',
+          headers: getHeaders(true, 'return=minimal'),
+          body: JSON.stringify({
+            queue_number: maxExistingNumber + i + 1,
+            assigned_at: new Date().toISOString(),
+            status: 'assigned'
+          })
+        });
+      }
+
+      await api('/rest/v1/events?id=eq.' + encodeURIComponent(evId), {
+        method: 'PATCH',
+        headers: getHeaders(true, 'return=minimal'),
+        body: JSON.stringify({
+          queue_assigned: true,
+          queue_assigned_at: new Date().toISOString()
+        })
+      });
+
+      await reloadAll();
+      alert(maxExistingNumber > 0
+        ? 'Sena deltagare har fått de sista lediga köplatserna.'
+        : 'Köplatserna har tilldelats slumpmässigt.');
+    }
+
+    async function adminRemoveQueueEntry(entryId) {
+      ensureAdmin();
+      if (!confirm('Ta bort denna person från kön?')) return;
+
+      await api('/rest/v1/queue_entries?id=eq.' + encodeURIComponent(entryId), {
+        method: 'DELETE',
+        headers: getHeaders(true, 'return=minimal')
+      });
+
+      await reloadAll();
+    }
+
+    async function clearQueueForEvent() {
+      ensureAdmin();
+      const evId = document.getElementById('adminQueueEventSelect').value;
+      if (!evId) {
+        alert('Välj en aktivitet först.');
+        return;
+      }
+
+      if (!confirm('Ta bort hela kön för denna aktivitet? Detta går inte att ångra.')) return;
+
+      await api('/rest/v1/queue_entries?event_id=eq.' + encodeURIComponent(evId), {
+        method: 'DELETE',
+        headers: getHeaders(true, 'return=minimal')
+      });
+
+      await api('/rest/v1/events?id=eq.' + encodeURIComponent(evId), {
+        method: 'PATCH',
+        headers: getHeaders(true, 'return=minimal'),
+        body: JSON.stringify({
+          queue_open: false,
+          queue_assigned: false,
+          queue_assigned_at: null
+        })
+      });
+
+      removeStoredQueueEntry(evId);
+      await reloadAll();
+      alert('Hela kön har tagits bort.');
+    }
+
+    async function joinQueue() {
+      const evId = getQueueEventIdFromUrl();
+      const ev = eventsCache.find(e => e.id === evId);
+      const statusEl = document.getElementById('queuePublicStatus');
+      const name = document.getElementById('queueNameInput').value.trim();
+      if (!ev) {
+        statusEl.textContent = 'Aktiviteten kunde inte hittas.';
+        statusEl.className = 'status-msg show err';
+        return;
+      }
+      if (!ev.queue_enabled) {
+        statusEl.textContent = 'Digital kö är inte aktiverad för denna aktivitet.';
+        statusEl.className = 'status-msg show err';
+        return;
+      }
+      if (!ev.queue_open) {
+        statusEl.textContent = 'Kön är inte öppen ännu. Vänta tills vi öppnar registreringen på plats.';
+        statusEl.className = 'status-msg show err';
+        return;
+      }
+
+      const existingId = getStoredQueueEntryId(evId);
+      if (existingId) {
+        renderQueueView();
+        return;
+      }
+
+      const rows = await api('/rest/v1/queue_entries', {
+        method: 'POST',
+        headers: getHeaders(false, 'return=representation'),
+        body: JSON.stringify([{
+          event_id: evId,
+          display_name: name || 'Deltagare',
+          has_mobile: true,
+          status: 'waiting'
+        }])
+      });
+
+      const created = Array.isArray(rows) ? rows[0] : rows;
+      if (created?.id) setStoredQueueEntry(evId, created.id);
+      await reloadAll();
+    }
+
+    async function leaveQueue() {
+      const evId = getQueueEventIdFromUrl();
+      const entryId = getStoredQueueEntryId(evId);
+      if (!entryId) return;
+      await api('/rest/v1/queue_entries?id=eq.' + encodeURIComponent(entryId), {
+        method: 'PATCH',
+        headers: getHeaders(false, 'return=minimal'),
+        body: JSON.stringify({ status: 'left' })
+      });
+      removeStoredQueueEntry(evId);
+      await reloadAll();
+    }
+
+    function renderQueueView() {
+      const queueCard = document.getElementById('queueCard');
+      if (!queueCard) return;
+
+      const eventId = getQueueEventIdFromUrl();
+      const ev = eventsCache.find(e => e.id === eventId);
+      const titleEl = document.getElementById('queueEventTitle');
+      const statusEl = document.getElementById('queueStatusText');
+      const bigNumberEl = document.getElementById('queueBigNumber');
+      const joinBtn = document.getElementById('queueJoinBtn');
+      const leaveBtn = document.getElementById('queueLeaveBtn');
+      const nameWrap = document.getElementById('queueNameWrap');
+
+      document.querySelectorAll('.card:not(#queueCard), .admin-row, .admin-panel').forEach(el => el.classList.add('hidden'));
+      queueCard.classList.add('show');
+
+      if (!ev) {
+        titleEl.textContent = 'Digital kö';
+        statusEl.textContent = 'Aktiviteten kunde inte hittas.';
+        bigNumberEl.classList.add('hidden');
+        joinBtn.classList.add('hidden');
+        leaveBtn.classList.add('hidden');
+        nameWrap.classList.add('hidden');
+        return;
+      }
+
+      titleEl.textContent = ev.day_name + ' · ' + fmtDate(ev.date);
+      const storedId = getStoredQueueEntryId(eventId);
+      const entry = queueEntriesCache.find(q => q.id === storedId && q.event_id === eventId);
+
+      if (!storedId || !entry) {
+        if (storedId && !entry) removeStoredQueueEntry(eventId);
+        bigNumberEl.classList.add('hidden');
+        leaveBtn.classList.add('hidden');
+        nameWrap.classList.remove('hidden');
+        joinBtn.classList.remove('hidden');
+
+        if (!ev.queue_enabled) {
+          statusEl.textContent = 'Digital kö är inte aktiverad för denna aktivitet.';
+          joinBtn.classList.add('hidden');
+          nameWrap.classList.add('hidden');
+        } else if (!ev.queue_open) {
+          statusEl.textContent = 'Kön är inte öppen ännu. Vänta tills vi öppnar registreringen.';
+          joinBtn.classList.add('hidden');
+        } else {
+          statusEl.textContent = 'Tryck på knappen nedan för att registrera att du är på plats. Du får din köplats slumpmässigt när vi delar ut könummer.';
+        }
+        return;
+      }
+
+      joinBtn.classList.add('hidden');
+      leaveBtn.classList.remove('hidden');
+      nameWrap.classList.add('hidden');
+
+      if (entry.status === 'left') {
+        statusEl.textContent = 'Du har lämnat kön.';
+        bigNumberEl.classList.add('hidden');
+        leaveBtn.classList.add('hidden');
+        removeStoredQueueEntry(eventId);
+        return;
+      }
+
+      if (entry.status === 'assigned' && entry.queue_number != null) {
+        statusEl.textContent = 'Din köplats är utdelad. Vänta tills ditt nummer ropas upp.';
+        bigNumberEl.textContent = entry.queue_number;
+        bigNumberEl.classList.remove('hidden');
+      } else {
+        statusEl.textContent = 'Du är registrerad. Vänta här så skickar vi ut din köplats slumpmässigt strax före utdelningen.';
+        bigNumberEl.classList.add('hidden');
+      }
+    }
+
+
+    function restoreAdminSession() {
+      if (adminSession && adminSession.access_token && !isSessionExpired(adminSession)) {
+        document.getElementById('adminLogin').style.display = 'none';
+        document.getElementById('adminContent').classList.add('show');
+      } else if (adminSession) {
+        clearAdminSession();
+      }
+    }
+
+    function bindEvents() {
+      document.getElementById('nameInput').addEventListener('input', refreshSubmitBtn);
+      document.getElementById('submitBtn').addEventListener('click', submitSignup);
+      document.getElementById('resetBtn').addEventListener('click', resetForm);
+      document.getElementById('logoutBtn').addEventListener('click', doLogout);
+      document.getElementById('createEventBtn').addEventListener('click', addEvent);
+      document.getElementById('adminEventSelect').addEventListener('change', renderSignupList);
+      document.getElementById('exportBtn').addEventListener('click', doExport);
+      document.getElementById('clearEventBtn').addEventListener('click', doClearEvent);
+      document.getElementById('adminQueueEventSelect').addEventListener('change', () => { renderQueueAdminSummary(); renderQueueAdminList(); });
+      document.getElementById('cancelBtn').addEventListener('click', doCancel);
+      document.getElementById('adminPwInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') doLogin();
+      });
+      document.getElementById('newActivityType').addEventListener('change', renderAdminPickupOptions);
+      document.getElementById('adminQueueEventSelect').addEventListener('change', renderAdminQueuePanel);
+      document.getElementById('queueOpenBtn').addEventListener('click', openQueue);
+      document.getElementById('queueCloseBtn').addEventListener('click', closeQueue);
+      document.getElementById('queueAssignBtn').addEventListener('click', assignQueueNumbers);
+      document.getElementById('queueAddManualBtn').addEventListener('click', addManualQueueEntry);
+      document.getElementById('queueClearBtn').addEventListener('click', clearQueueForEvent);
+      document.getElementById('queueRefreshBtn').addEventListener('click', reloadAll);
+      document.getElementById('queueJoinBtn').addEventListener('click', joinQueue);
+      document.getElementById('queueLeaveBtn').addEventListener('click', leaveQueue);
+      [0,1,2,3].forEach(i => {
+        document.getElementById('atab' + i).addEventListener('click', () => switchTab(i));
+      });
+    }
+
+    async function init() {
+      bindEvents();
+      restoreAdminSession();
+      renderAdminPickupOptions();
+      try {
+        await reloadAll();
+      } catch (err) {
+        console.error(err);
+        if (isQueueMode()) {
+          const statusEl = document.getElementById('queueStatusText');
+          if (statusEl) statusEl.textContent = 'Kunde inte ladda köinformationen just nu.';
+          document.getElementById('queueCard').classList.add('show');
+        } else {
+          document.getElementById('eventsList').innerHTML = '<div class="empty-state">Kunde inte ladda data. Kontrollera Supabase-inställningar eller policies.</div>';
+        }
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
