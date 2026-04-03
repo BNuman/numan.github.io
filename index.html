@@ -285,9 +285,6 @@
   </div>
 
   <div class="card">
-
-
-  <div class="card">
     <div class="main-form" id="mainForm">
       <div class="input-group">
         <div class="section-label">Ditt namn</div>
@@ -304,7 +301,7 @@
       <div id="pickupSelectorWrap" class="pickup-panel hidden"></div>
 
       <div id="publicStatus" class="status-msg"></div>
-      <button class="submit-btn" id="submitBtn" disabled>Jag vill hjälpa till</button>
+      <button class="submit-btn" type="button" id="submitBtn" onclick="submitSignup()" disabled>Jag vill hjälpa till</button>
     </div>
 
     <div class="confirm-screen" id="confirmScreen">
@@ -313,7 +310,7 @@
       <div class="confirm-msg" id="confirmMsg"></div>
       <div class="confirm-badge" id="confirmBadge"></div>
       <br /><br />
-      <button class="reset-btn" id="resetBtn">← Anmäl igen</button>
+      <button class="reset-btn" type="button" id="resetBtn" onclick="resetForm()">← Anmäl igen</button>
     </div>
   </div>
 
@@ -332,7 +329,7 @@
       </select>
     </div>
     <div id="cancelMsg" class="status-msg"></div>
-    <button class="submit-btn" id="cancelBtn" style="font-size:15px;padding:13px;">Ta bort min anmälan</button>
+    <button class="submit-btn" type="button" id="cancelBtn" onclick="doCancel()" style="font-size:15px;padding:13px;">Ta bort min anmälan</button>
   </div>
 
   <div class="admin-row">
@@ -353,7 +350,7 @@
     <div class="admin-content" id="adminContent">
       <div class="admin-header">
         <div style="font-weight:900;">⚙️ Admin</div>
-        <button class="logout-btn" id="logoutBtn">Logga ut</button>
+        <button class="logout-btn" type="button" id="logoutBtn" onclick="doLogout()">Logga ut</button>
       </div>
 
       <div class="admin-tabs">
@@ -413,21 +410,21 @@
       <div id="tab2" style="display:none;">
         <div class="input-group">
           <div class="section-label">Välj aktivitet</div>
-          <select id="adminEventSelect">
+          <select id="adminEventSelect" onchange="renderSignupList()">
             <option value="">— Välj aktivitet —</option>
           </select>
         </div>
         <div id="adminVolList"></div>
         <div class="admin-actions">
-          <button class="act-btn export" id="exportBtn">⬇️ Exportera CSV</button>
-          <button class="act-btn danger" id="clearEventBtn">🗑️ Rensa aktivitet</button>
+          <button class="act-btn export" type="button" id="exportBtn" onclick="doExport()">⬇️ Exportera CSV</button>
+          <button class="act-btn danger" type="button" id="clearEventBtn" onclick="doClearEvent()">🗑️ Rensa aktivitet</button>
         </div>
       </div>
 
       <div id="tab3" style="display:none;">
         <div class="input-group">
           <div class="section-label">Välj aktivitet med digital kö</div>
-          <select id="adminQueueEventSelect">
+          <select id="adminQueueEventSelect" onchange="renderAdminQueuePanel()">
             <option value="">— Välj aktivitet —</option>
           </select>
         </div>
@@ -1867,30 +1864,8 @@
     }
 
     function bindEvents() {
-      const on = (id, event, handler) => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener(event, handler);
-      };
-
-      on('nameInput', 'input', refreshSubmitBtn);
-      on('submitBtn', 'click', submitSignup);
-      on('resetBtn', 'click', resetForm);
-      on('logoutBtn', 'click', doLogout);
-      on('createEventBtn', 'click', addEvent);
-      on('adminEventSelect', 'change', renderSignupList);
-      on('exportBtn', 'click', doExport);
-      on('clearEventBtn', 'click', doClearEvent);
-      on('adminQueueEventSelect', 'change', renderAdminQueuePanel);
-      on('cancelBtn', 'click', doCancel);
-      on('newActivityType', 'change', () => renderAdminPickupOptions());
-      on('queueOpenBtn', 'click', openQueue);
-      on('queueCloseBtn', 'click', closeQueue);
-      on('queueAssignBtn', 'click', assignQueueNumbers);
-      on('queueAddManualBtn', 'click', addManualQueueEntry);
-      on('queueClearBtn', 'click', clearQueueForEvent);
-      on('queueRefreshBtn', 'click', reloadAll);
-      on('queueJoinBtn', 'click', joinQueue);
-      on('queueLeaveBtn', 'click', leaveQueue);
+      const nameInput = document.getElementById('nameInput');
+      if (nameInput) nameInput.addEventListener('input', refreshSubmitBtn);
 
       const pw = document.getElementById('adminPwInput');
       if (pw) {
@@ -1899,10 +1874,8 @@
         });
       }
 
-      [0,1,2,3].forEach(i => {
-        const tabBtn = document.getElementById('atab' + i);
-        if (tabBtn) tabBtn.addEventListener('click', () => switchTab(i));
-      });
+      const newType = document.getElementById('newActivityType');
+      if (newType) newType.addEventListener('change', renderAdminPickupOptions);
     }
 
     async function init() {
