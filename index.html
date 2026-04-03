@@ -45,6 +45,9 @@
     }
     .event-card { cursor:pointer; }
     .event-card.selected { background:#E8F5EE; border-color:#2E7D4F; }
+    .pickup-option { border:2px solid #d1e8da; border-radius:16px; background:#f9fafb; padding:12px; margin-bottom:8px; display:flex; gap:10px; align-items:flex-start; }
+    .pickup-option small { color:#6b7280; font-weight:700; }
+    .pickup-option.booked { opacity:.55; background:#f3f4f6; }
     .event-top, .mgmt-top { display:flex; gap:12px; align-items:flex-start; justify-content:space-between; }
     .event-emoji { font-size:28px; line-height:1; }
     .event-title { font-size:18px; font-weight:900; }
@@ -95,6 +98,7 @@
       </div>
       <div class="section-label">Välj aktivitet</div>
       <div id="eventsList"></div>
+      <div id="pickupSelectorWrap" class="hidden"></div>
       <div id="publicStatus" class="status-msg"></div>
       <button class="submit-btn" type="button" id="signupBtn" onclick="submitSignup()" disabled>Jag vill hjälpa till</button>
     </div>
@@ -250,11 +254,26 @@ async function reloadAll() {
 
 function renderPublicEvents() {
   const el = document.getElementById('eventsList');
-  const active = eventsCache.filter(e => e.active !== false);
+  const active = eventsCache
+    .filter(e => e.active !== false)
+    .slice()
+    .sort((a, b) => {
+      const ad = String(a.date || '');
+      const bd = String(b.date || '');
+      if (ad !== bd) return ad.localeCompare(bd);
+      const at = String(a.time || '');
+      const bt = String(b.time || '');
+      if (at !== bt) return at.localeCompare(bt);
+      const ao = isPickupEvent(a) ? 1 : 0;
+      const bo = isPickupEvent(b) ? 1 : 0;
+      if (ao !== bo) return ao - bo;
+      return String(a.day_name || '').localeCompare(String(b.day_name || ''));
+    });
 
   if (!active.length) {
     el.innerHTML = '<div class="empty-state">Ingen aktivitet just nu.</div>';
     selectedEventId = null;
+    renderPickupSelector();
     refreshSignupButton();
     return;
   }
@@ -273,17 +292,66 @@ function renderPublicEvents() {
     </div>
   `).join('');
 
+  renderPickupSelector();
   refreshSignupButton();
+}
+
+function getAllowedPickupLocations(ev) {
+  return Array.isArray(ev?.allowed_pickup_locations) ? ev.allowed_pickup_locations : [];
+}
+function getBookedPickupLocations(eventId) {
+  const booked = new Set();
+  signupsCache
+    .filter(s => s.event_id === eventId && !s.is_waitlist)
+    .forEach(s => (Array.isArray(s.selected_locations) ? s.selected_locations : []).forEach(loc => booked.add(loc)));
+  return booked;
+}
+function renderPickupSelector() {
+  const wrap = document.getElementById('pickupSelectorWrap');
+  const ev = eventsCache.find(e => e.id === selectedEventId);
+
+  if (!ev || !isPickupEvent(ev)) {
+    wrap.classList.add('hidden');
+    wrap.innerHTML = '';
+    return;
+  }
+
+  const allowed = getAllowedPickupLocations(ev);
+  const booked = getBookedPickupLocations(ev.id);
+
+  wrap.classList.remove('hidden');
+  wrap.innerHTML = '<div class="section-label">Välj var du kan hämta</div>' + allowed.map(loc => {
+    const isBooked = booked.has(loc);
+    return `
+      <label class="pickup-option ${isBooked ? 'booked' : ''}">
+        <input type="checkbox" value="${escapeHtml(loc)}" ${isBooked ? 'disabled' : ''} onchange="refreshSignupButton()">
+        <span><strong>${escapeHtml(loc)}</strong><br><small>${isBooked ? 'Redan bokat' : 'Ledigt'}</small></span>
+      </label>
+    `;
+  }).join('');
 }
 function selectEvent(id) {
   selectedEventId = id;
   hidePublicStatus();
   renderPublicEvents();
+  renderPickupSelector();
 }
 function refreshSignupButton() {
   const btn = document.getElementById('signupBtn');
   const name = document.getElementById('nameInput').value.trim();
-  btn.disabled = !(selectedEventId && name);
+  const ev = eventsCache.find(e => e.id === selectedEventId);
+
+  if (!ev) {
+    btn.disabled = true;
+    return;
+  }
+
+  if (isPickupEvent(ev)) {
+    const selectedPickup = Array.from(document.querySelectorAll('#pickupSelectorWrap input:checked')).length;
+    btn.disabled = !(name && selectedPickup > 0);
+  } else {
+    btn.disabled = !(selectedEventId && name);
+  }
 }
 function showPublicStatus(text, ok = true) {
   const el = document.getElementById('publicStatus');
@@ -315,14 +383,37 @@ async function submitSignup() {
       return;
     }
 
-    const result = await api('/rest/v1/rpc/signup_volunteer', {
-      method: 'POST',
-      headers: getHeaders(false),
-      body: JSON.stringify({
-        p_event_id: ev.id,
-        p_name: name
-      })
-    });
+    let result;
+    if (isPickupEvent(ev)) {
+      const selectedLocations = Array.from(document.querySelectorAll('#pickupSelectorWrap input:checked')).map(x => x.value);
+      if (!selectedLocations.length) {
+        showPublicStatus('Välj minst ett hämtställe.', false);
+        return;
+      }
+
+      result = await api('/rest/v1/rpc/signup_volunteer_v2', {
+        method: 'POST',
+        headers: getHeaders(false),
+        body: JSON.stringify({
+          p_event_id: ev.id,
+          p_name: name,
+          p_selected_locations: selectedLocations
+        })
+      });
+
+      document.getElementById('confirmBadge').textContent = selectedLocations.join(', ');
+    } else {
+      result = await api('/rest/v1/rpc/signup_volunteer', {
+        method: 'POST',
+        headers: getHeaders(false),
+        body: JSON.stringify({
+          p_event_id: ev.id,
+          p_name: name
+        })
+      });
+
+      document.getElementById('confirmBadge').textContent = ev.day_name + ' – ' + ev.date;
+    }
 
     await reloadAll();
 
@@ -332,7 +423,6 @@ async function submitSignup() {
       return;
     }
 
-    document.getElementById('confirmBadge').textContent = ev.day_name + ' – ' + ev.date;
     document.getElementById('mainForm').classList.add('hidden');
     document.getElementById('confirmScreen').classList.remove('hidden');
   } catch (err) {
@@ -344,6 +434,7 @@ function resetForm() {
   document.getElementById('mainForm').classList.remove('hidden');
   document.getElementById('nameInput').value = '';
   selectedEventId = null;
+  renderPickupSelector();
   renderPublicEvents();
   hidePublicStatus();
 }
@@ -439,7 +530,7 @@ async function addEvent() {
         active: true,
         max_volunteers: 7,
         activity_type: type,
-        allowed_pickup_locations: [],
+        allowed_pickup_locations: type === 'hamtning' ? PICKUP_LOCATIONS : [],
         queue_enabled: false,
         queue_open: false,
         queue_assigned: false,
