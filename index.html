@@ -355,16 +355,27 @@ function renderPublicEvents() {
   if (!active.length) {
     el.innerHTML = '<div class="empty-state">Ingen aktivitet just nu.</div>';
     selectedEventId = null;
-    
     refreshSignupButton();
     return;
   }
 
   el.innerHTML = active.map(ev => {
     const isSelected = selectedEventId === ev.id;
+
+    const pickupAllowed = getAllowedPickupLocations(ev).length;
+    const pickupBooked = getBookedPickupLocations(ev.id).size;
+    const pickupAvailable = Math.max(0, pickupAllowed - pickupBooked);
+
+    const confirmed = signupsCache.filter(s => s.event_id === ev.id && !s.is_waitlist).length;
+    const volunteerAvailable = Math.max(0, 7 - confirmed);
+
     const infoLine = isPickupEvent(ev)
-      ? `${Math.max(0, getAllowedPickupLocations(ev).length - getBookedPickupLocations(ev.id).size)} av ${getAllowedPickupLocations(ev).length} hämtställen lediga`
-      : `${Math.max(0, 7 - signupsCache.filter(s => s.event_id === ev.id && !s.is_waitlist).length)} av 7 platser lediga`;
+      ? `${pickupAvailable} av ${pickupAllowed} hämtställen lediga`
+      : `${volunteerAvailable} av 7 platser lediga`;
+
+    const isFull = isPickupEvent(ev)
+      ? pickupAllowed > 0 && pickupAvailable === 0
+      : volunteerAvailable === 0;
 
     let pickupHtml = '';
     if (isSelected && isPickupEvent(ev)) {
@@ -387,23 +398,25 @@ function renderPublicEvents() {
     }
 
     return `
-    <div class="event-card ${isSelected ? 'selected' : ''}">
-      <div class="event-top" onclick="selectEvent('${ev.id}')">
-        <div class="event-emoji">${isPickupEvent(ev) ? '🚚' : '🍽️'}</div>
-        <div style="flex:1;">
-          <div class="event-title">${escapeHtml(ev.day_name)}</div>
-          <div class="event-sub">${escapeHtml(fmtDate(ev.date))}</div>
-          <div class="event-sub">${isPickupEvent(ev) ? 'Hämtning från partner/donatörer' : 'Matutdelning'}${ev.time ? ' · ' + escapeHtml(ev.time) : ''}${ev.location ? ' · ' + escapeHtml(ev.location) : ''}</div>
-          <div class="event-sub" style="margin-top:6px;font-weight:900;color:#2E7D4F;">${infoLine}</div>
-          ${isPickupEvent(ev) ? '<span class="tag">Hämtning</span>' : '<span class="tag">Matutdelning</span>'}
-          ${pickupHtml}
+      <div class="event-card ${isSelected ? 'selected' : ''}">
+        <div class="event-top" onclick="selectEvent('${ev.id}')">
+          <div class="event-emoji">${isPickupEvent(ev) ? '🚚' : '🍽️'}</div>
+          <div style="flex:1;">
+            <div class="event-title">${escapeHtml(ev.day_name)}</div>
+            <div class="event-sub">${escapeHtml(fmtDate(ev.date))}</div>
+            <div class="event-sub">${isPickupEvent(ev) ? 'Hämtning från partner/donatörer' : 'Matutdelning'}${ev.time ? ' · ' + escapeHtml(ev.time) : ''}${ev.location ? ' · ' + escapeHtml(ev.location) : ''}</div>
+            <div class="status-line ${isFull ? 'full' : ''}">
+              ${isFull ? (isPickupEvent(ev) ? 'Fullbokad hämtning' : 'Fullbokad – reservlista gäller') : infoLine}
+            </div>
+            ${isPickupEvent(ev) ? '<span class="tag">Hämtning</span>' : '<span class="tag">Matutdelning</span>'}
+            ${isSelected ? '<div class="selected-badge">Vald aktivitet</div>' : ''}
+            ${pickupHtml}
+          </div>
         </div>
       </div>
-    </div>
-  `;
+    `;
   }).join('');
 
-  
   refreshSignupButton();
 }
 
