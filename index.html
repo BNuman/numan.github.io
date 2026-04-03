@@ -373,15 +373,10 @@ async function submitSignup() {
   try {
     hidePublicStatus();
 
-    const duplicate = signupsCache.find(s =>
+    const existingSignup = signupsCache.find(s =>
       s.event_id === ev.id &&
       String(s.name || '').trim().toLowerCase() === name.toLowerCase()
     );
-
-    if (duplicate) {
-      showPublicStatus('Du är redan anmäld till denna aktivitet.', false);
-      return;
-    }
 
     let result;
     if (isPickupEvent(ev)) {
@@ -391,18 +386,68 @@ async function submitSignup() {
         return;
       }
 
-      result = await api('/rest/v1/rpc/signup_volunteer_v2', {
-        method: 'POST',
-        headers: getHeaders(false),
-        body: JSON.stringify({
-          p_event_id: ev.id,
-          p_name: name,
-          p_selected_locations: selectedLocations
-        })
-      });
+      if (existingSignup) {
+        const currentLocations = Array.isArray(existingSignup.selected_locations) ? existingSignup.selected_locations : [];
+        const newUniqueLocations = selectedLocations.filter(loc => !currentLocations.includes(loc));
 
-      document.getElementById('confirmBadge').textContent = selectedLocations.join(', ');
+        if (!newUniqueLocations.length) {
+          showPublicStatus('Du har redan bokat de valda hämtställena.', false);
+          return;
+        }
+
+        const bookedByOthers = newUniqueLocations.filter(loc =>
+          signupsCache.some(s =>
+            s.event_id === ev.id &&
+            s.id !== existingSignup.id &&
+            Array.isArray(s.selected_locations) &&
+            s.selected_locations.includes(loc) &&
+            !s.is_waitlist
+          )
+        );
+
+        if (bookedByOthers.length) {
+          showPublicStatus('Ett eller flera valda hämtställen är redan bokade.', false);
+          return;
+        }
+
+        const mergedLocations = [...currentLocations, ...newUniqueLocations];
+
+        await api('/rest/v1/signups?id=eq.' + encodeURIComponent(existingSignup.id), {
+          method: 'PATCH',
+          headers: getHeaders(false, 'return=minimal'),
+          body: JSON.stringify({
+            selected_locations: mergedLocations
+          })
+        });
+
+        await reloadAll();
+
+        document.getElementById('confirmBadge').textContent = mergedLocations.join(', ');
+        document.getElementById('confirmMsg').textContent = 'Dina hämtställen har uppdaterats.';
+        document.getElementById('confirmTitle').textContent = 'Din bokning är uppdaterad!';
+      } else {
+        result = await api('/rest/v1/rpc/signup_volunteer_v2', {
+          method: 'POST',
+          headers: getHeaders(false),
+          body: JSON.stringify({
+            p_event_id: ev.id,
+            p_name: name,
+            p_selected_locations: selectedLocations
+          })
+        });
+
+        await reloadAll();
+
+        document.getElementById('confirmBadge').textContent = selectedLocations.join(', ');
+        document.getElementById('confirmMsg').textContent = 'Tack! Du är nu anmäld till hämtningen.';
+        document.getElementById('confirmTitle').textContent = 'Du är anmäld!';
+      }
     } else {
+      if (existingSignup) {
+        showPublicStatus('Du är redan anmäld till denna aktivitet.', false);
+        return;
+      }
+
       result = await api('/rest/v1/rpc/signup_volunteer', {
         method: 'POST',
         headers: getHeaders(false),
@@ -412,15 +457,17 @@ async function submitSignup() {
         })
       });
 
+      await reloadAll();
+
+      const status = Array.isArray(result) && result[0] ? result[0].status : 'confirmed';
+      if (status === 'duplicate') {
+        showPublicStatus('Du är redan anmäld till denna aktivitet.', false);
+        return;
+      }
+
       document.getElementById('confirmBadge').textContent = ev.day_name + ' – ' + ev.date;
-    }
-
-    await reloadAll();
-
-    const status = Array.isArray(result) && result[0] ? result[0].status : 'confirmed';
-    if (status === 'duplicate') {
-      showPublicStatus('Du är redan anmäld till denna aktivitet.', false);
-      return;
+      document.getElementById('confirmMsg').textContent = 'Tack! Din anmälan är nu registrerad.';
+      document.getElementById('confirmTitle').textContent = 'Du är anmäld!';
     }
 
     document.getElementById('mainForm').classList.add('hidden');
