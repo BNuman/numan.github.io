@@ -1083,6 +1083,37 @@
       }
     }
 
+
+    function renderAdminPickupOptions() {
+      const typeEl = document.getElementById('newActivityType');
+      const wrap = document.getElementById('adminPickupWrap');
+      const list = document.getElementById('adminPickupList');
+      if (!typeEl || !wrap || !list) return;
+
+      const isPickup = typeEl.value === 'hamtning';
+      wrap.classList.toggle('hidden', !isPickup);
+
+      if (!isPickup) {
+        list.innerHTML = '';
+        return;
+      }
+
+      list.innerHTML = PICKUP_LOCATIONS.map(loc => `
+        <label class="pickup-option">
+          <input type="checkbox" value="${escapeHtml(loc)}" />
+          <span>
+            <strong>${escapeHtml(loc)}</strong><br>
+            <small>Visa detta ställe för volontärerna</small>
+          </span>
+        </label>
+      `).join('');
+    }
+
+    function getAdminSelectedPickupLocations() {
+      return Array.from(document.querySelectorAll('#adminPickupList input:checked'))
+        .map(el => el.value);
+    }
+
     async function addEvent() {
       ensureAdmin();
       const activityType = document.getElementById('newActivityType').value;
@@ -1842,7 +1873,7 @@
       on('clearEventBtn', 'click', doClearEvent);
       on('adminQueueEventSelect', 'change', renderAdminQueuePanel);
       on('cancelBtn', 'click', doCancel);
-      on('newActivityType', 'change', renderAdminPickupOptions);
+      on('newActivityType', 'change', () => renderAdminPickupOptions());
       on('queueOpenBtn', 'click', openQueue);
       on('queueCloseBtn', 'click', closeQueue);
       on('queueAssignBtn', 'click', assignQueueNumbers);
