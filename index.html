@@ -280,8 +280,8 @@
       <input type="text" id="queueNameInput" placeholder="Skriv ditt namn om du vill" maxlength="50" />
     </div>
     <div id="queuePublicStatus" class="status-msg"></div>
-    <button class="submit-btn" id="queueJoinBtn">Jag är här</button>
-    <button class="reset-btn hidden" id="queueLeaveBtn" style="width:100%;margin-top:10px;">Lämna kön</button>
+    <button class="submit-btn" type="button" id="queueJoinBtn" onclick="joinQueue()">Ställ mig i kön</button>
+    <button class="reset-btn hidden" type="button" id="queueLeaveBtn" onclick="leaveQueue()" style="width:100%;margin-top:10px;">Lämna kön</button>
   </div>
 
   <div class="card">
@@ -344,7 +344,7 @@
       <input type="password" id="adminPwInput" placeholder="Ange lösenord…" />
       <div class="login-error" id="loginError">❌ Kunde inte logga in. Kontrollera e-post och lösenord.</div>
       <br /><br />
-      <button class="submit-btn" id="loginBtn" onclick="doLogin()" style="font-size:15px;padding:13px;">Logga in</button>
+      <button class="submit-btn" type="button" id="loginBtn" onclick="doLogin()" style="font-size:15px;padding:13px;">Logga in</button>
     </div>
 
     <div class="admin-content" id="adminContent">
@@ -471,6 +471,8 @@
 
     let selectedEventId = null;
     let eventsCache = [];
+    let isCreatingEvent = false;
+    let isJoiningQueue = false;
     let signupsCache = [];
     const ADMIN_SESSION_KEY = 'hf_admin_session_v3';
     const QUEUE_STORAGE_KEY = 'hf_queue_entries_v3';
@@ -1122,6 +1124,9 @@
 
     async function addEvent() {
       ensureAdmin();
+      if (isCreatingEvent) return;
+
+      const createBtn = document.getElementById('createEventBtn');
       const activityType = document.getElementById('newActivityType').value;
       const dayName = document.getElementById('newDayName').value.trim();
       const date = document.getElementById('newDate').value;
@@ -1141,6 +1146,9 @@
       }
 
       try {
+        isCreatingEvent = true;
+        if (createBtn) createBtn.disabled = true;
+
         await api('/rest/v1/events', {
           method: 'POST',
           headers: getHeaders(false, 'return=minimal'),
@@ -1172,6 +1180,9 @@
         await reloadAll();
       } catch (err) {
         alert('Kunde inte skapa aktivitet: ' + err.message);
+      } finally {
+        isCreatingEvent = false;
+        if (createBtn) createBtn.disabled = false;
       }
     }
 
@@ -1726,10 +1737,14 @@
     }
 
     async function joinQueue() {
+      if (isJoiningQueue) return;
+
       const evId = getQueueEventIdFromUrl();
       const ev = eventsCache.find(e => e.id === evId);
       const statusEl = document.getElementById('queuePublicStatus');
+      const joinBtn = document.getElementById('queueJoinBtn');
       const name = document.getElementById('queueNameInput').value.trim();
+
       if (!ev) {
         statusEl.textContent = 'Aktiviteten kunde inte hittas.';
         statusEl.className = 'status-msg show err';
@@ -1752,20 +1767,31 @@
         return;
       }
 
-      const rows = await api('/rest/v1/queue_entries', {
-        method: 'POST',
-        headers: getHeaders(false, 'return=representation'),
-        body: JSON.stringify([{
-          event_id: evId,
-          display_name: name || 'Deltagare',
-          has_mobile: true,
-          status: 'waiting'
-        }])
-      });
+      try {
+        isJoiningQueue = true;
+        if (joinBtn) joinBtn.disabled = true;
 
-      const created = Array.isArray(rows) ? rows[0] : rows;
-      if (created?.id) setStoredQueueEntry(evId, created.id);
-      await reloadAll();
+        const rows = await api('/rest/v1/queue_entries', {
+          method: 'POST',
+          headers: getHeaders(false, 'return=representation'),
+          body: JSON.stringify([{
+            event_id: evId,
+            display_name: name || 'Deltagare',
+            has_mobile: true,
+            status: 'waiting'
+          }])
+        });
+
+        const created = Array.isArray(rows) ? rows[0] : rows;
+        if (created?.id) setStoredQueueEntry(evId, created.id);
+        await reloadAll();
+      } catch (err) {
+        statusEl.textContent = 'Kunde inte ställa dig i kön: ' + err.message;
+        statusEl.className = 'status-msg show err';
+      } finally {
+        isJoiningQueue = false;
+        if (joinBtn) joinBtn.disabled = false;
+      }
     }
 
     async function leaveQueue() {
