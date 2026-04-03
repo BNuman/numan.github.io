@@ -357,10 +357,10 @@
       </div>
 
       <div class="admin-tabs">
-        <button class="atab active" id="atab0">➕ Skapa aktivitet</button>
-        <button class="atab" id="atab1">📅 Hantera</button>
-        <button class="atab" id="atab2">📋 Anmälningar</button>
-        <button class="atab" id="atab3">🎟️ Digital kö</button>
+        <button class="atab active" id="atab0" onclick="switchTab(0)">➕ Skapa aktivitet</button>
+        <button class="atab" id="atab1" onclick="switchTab(1)">📅 Hantera</button>
+        <button class="atab" id="atab2" onclick="switchTab(2)">📋 Anmälningar</button>
+        <button class="atab" id="atab3" onclick="switchTab(3)">🎟️ Digital kö</button>
       </div>
 
       <div id="tab0">
@@ -402,7 +402,7 @@
           </div>
         </div>
 
-        <button class="create-btn" id="createEventBtn">➕ Skapa aktivitet</button>
+        <button class="create-btn" id="createEventBtn" onclick="addEvent()">➕ Skapa aktivitet</button>
         <div class="success-msg" id="createSuccess">✅ Aktivitet skapad!</div>
       </div>
 
@@ -437,14 +437,14 @@
           <div class="queue-link-box" id="adminQueueLinkBox"></div>
         </div>
         <div class="admin-actions">
-          <button class="act-btn export" id="queueOpenBtn">🟢 Öppna kö</button>
-          <button class="act-btn danger" id="queueCloseBtn">🔒 Stäng kö</button>
-          <button class="act-btn export" id="queueAssignBtn">🎲 Slumpa köplatser</button>
+          <button class="act-btn export" id="queueOpenBtn" onclick="openQueue()">🟢 Öppna kö</button>
+          <button class="act-btn danger" id="queueCloseBtn" onclick="closeQueue()">🔒 Stäng kö</button>
+          <button class="act-btn export" id="queueAssignBtn" onclick="assignQueueNumbers()">🎲 Slumpa köplatser</button>
         </div>
         <div class="admin-actions" style="margin-top:8px;">
-          <button class="act-btn export" id="queueAddManualBtn">➕ Lägg till utan mobil</button>
-          <button class="act-btn danger" id="queueClearBtn">🗑️ Rensa hela kön</button>
-          <button class="act-btn danger" id="queueRefreshBtn">↻ Uppdatera kö</button>
+          <button class="act-btn export" id="queueAddManualBtn" onclick="addManualQueueEntry()">➕ Lägg till utan mobil</button>
+          <button class="act-btn danger" id="queueClearBtn" onclick="clearQueueForEvent()">🗑️ Rensa hela kön</button>
+          <button class="act-btn danger" id="queueRefreshBtn" onclick="reloadAll()">↻ Uppdatera kö</button>
         </div>
         <div id="adminQueueList" style="margin-top:12px;"></div>
       </div>
@@ -452,6 +452,7 @@
   </div>
 
   <script>
+    window.addEventListener('error', function (e) { console.error(e.error || e.message); });
     const SUPABASE_URL = 'https://azmvdeynrqaldlqsmwkt.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXZkZXlucnFhbGRscXNtd2t0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNjAxODYsImV4cCI6MjA5MDczNjE4Nn0.GTKzntDmk4bV1bomnzPPr3Xs0IuwqjuoIv7XSvi3F9M';
     const MAX = 7;
