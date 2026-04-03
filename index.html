@@ -351,8 +351,8 @@ function renderPublicEvents() {
           ${allowed.map(loc => {
             const isBooked = booked.has(loc);
             return `
-              <label class="pickup-option ${isBooked ? 'booked' : ''}">
-                <input type="checkbox" value="${escapeHtml(loc)}" ${isBooked ? 'disabled' : ''} onchange="refreshSignupButton()">
+              <label class="pickup-option ${isBooked ? 'booked' : ''}" onclick="event.stopPropagation()">
+                <input type="checkbox" value="${escapeHtml(loc)}" ${isBooked ? 'disabled' : ''} onclick="event.stopPropagation()" onchange="refreshSignupButton()">
                 <span><strong>${escapeHtml(loc)}</strong><br><small>${isBooked ? 'Redan bokat' : 'Ledigt'}</small></span>
               </label>
             `;
@@ -409,8 +409,8 @@ function renderPickupSelector() {
   wrap.innerHTML = '<div class="section-label">Välj var du kan hämta</div>' + allowed.map(loc => {
     const isBooked = booked.has(loc);
     return `
-      <label class="pickup-option ${isBooked ? 'booked' : ''}">
-        <input type="checkbox" value="${escapeHtml(loc)}" ${isBooked ? 'disabled' : ''} onchange="refreshSignupButton()">
+      <label class="pickup-option ${isBooked ? 'booked' : ''}" onclick="event.stopPropagation()">
+        <input type="checkbox" value="${escapeHtml(loc)}" ${isBooked ? 'disabled' : ''} onclick="event.stopPropagation()" onchange="refreshSignupButton()">
         <span><strong>${escapeHtml(loc)}</strong><br><small>${isBooked ? 'Redan bokat' : 'Ledigt'}</small></span>
       </label>
     `;
