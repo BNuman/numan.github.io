@@ -113,6 +113,27 @@
     </div>
   </div>
 
+  
+  <div class="admin-row"><span class="admin-link" onclick="toggleCancel()">❌ Avanmäl / avboka</span></div>
+
+  <div class="card hidden" id="cancelCard">
+    <div class="section-label">Avanmäl / avboka</div>
+    <div class="input-group">
+      <div class="section-label">Ditt namn</div>
+      <input type="text" id="cancelName" placeholder="Skriv ditt namn exakt som du anmälde dig…" maxlength="50" oninput="renderCancelOptions()">
+    </div>
+    <div class="input-group">
+      <div class="section-label">Välj aktivitet</div>
+      <select id="cancelEventSelect" onchange="renderCancelOptions()">
+        <option value="">— Välj aktivitet —</option>
+      </select>
+    </div>
+    <div id="cancelPickupWrap" class="hidden"></div>
+    <div id="cancelMsg" class="status-msg"></div>
+    <button class="submit-btn" type="button" id="cancelBtn" onclick="doCancel()">Ta bort min anmälan</button>
+  </div>
+
+
   <div class="admin-row"><span class="admin-link" onclick="toggleAdmin()">🔐 Admin-inloggning</span></div>
 
   <div class="card admin-panel" id="adminPanel">
@@ -250,6 +271,7 @@ async function reloadAll() {
   await Promise.all([loadEvents(), loadSignups()]);
   renderPublicEvents();
   renderMgmtList();
+  populateCancelSelect();
 }
 
 function renderPublicEvents() {
@@ -491,6 +513,140 @@ function resetForm() {
   renderPickupSelector();
   renderPublicEvents();
   hidePublicStatus();
+}
+
+
+function toggleCancel() {
+  const card = document.getElementById('cancelCard');
+  card.classList.toggle('hidden');
+  populateCancelSelect();
+  renderCancelOptions();
+}
+function populateCancelSelect() {
+  const sel = document.getElementById('cancelEventSelect');
+  const active = eventsCache.filter(e => e.active !== false);
+  sel.innerHTML = '<option value="">— Välj aktivitet —</option>' + active.map(ev =>
+    `<option value="${ev.id}">${escapeHtml(ev.day_name)} ${escapeHtml(ev.date)} · ${isPickupEvent(ev) ? 'Hämtning' : 'Matutdelning'}</option>`
+  ).join('');
+}
+function renderCancelOptions() {
+  const name = document.getElementById('cancelName').value.trim().toLowerCase();
+  const eventId = document.getElementById('cancelEventSelect').value;
+  const wrap = document.getElementById('cancelPickupWrap');
+  const btn = document.getElementById('cancelBtn');
+  const msg = document.getElementById('cancelMsg');
+  msg.textContent = '';
+  msg.className = 'status-msg';
+
+  if (!eventId || !name) {
+    wrap.classList.add('hidden');
+    wrap.innerHTML = '';
+    btn.textContent = 'Ta bort min anmälan';
+    return;
+  }
+
+  const ev = eventsCache.find(e => e.id === eventId);
+  const signup = signupsCache.find(s =>
+    s.event_id === eventId &&
+    String(s.name || '').trim().toLowerCase() === name
+  );
+
+  if (!ev || !signup || !isPickupEvent(ev)) {
+    wrap.classList.add('hidden');
+    wrap.innerHTML = '';
+    btn.textContent = 'Ta bort min anmälan';
+    return;
+  }
+
+  const locations = Array.isArray(signup.selected_locations) ? signup.selected_locations : [];
+  if (!locations.length) {
+    wrap.classList.add('hidden');
+    wrap.innerHTML = '';
+    btn.textContent = 'Ta bort min anmälan';
+    return;
+  }
+
+  wrap.classList.remove('hidden');
+  wrap.innerHTML = '<div class="section-label">Välj hämtställen att avboka</div>' + locations.map(loc => `
+    <label class="pickup-option">
+      <input type="checkbox" value="${escapeHtml(loc)}">
+      <span><strong>${escapeHtml(loc)}</strong><br><small>Markera bara de hämtningar du vill avboka</small></span>
+    </label>
+  `).join('');
+  btn.textContent = 'Avboka valda hämtningar / ta bort anmälan';
+}
+async function doCancel() {
+  const name = document.getElementById('cancelName').value.trim();
+  const eventId = document.getElementById('cancelEventSelect').value;
+  const msg = document.getElementById('cancelMsg');
+
+  if (!name || !eventId) {
+    msg.textContent = 'Fyll i namn och välj aktivitet.';
+    msg.className = 'status-msg show err';
+    return;
+  }
+
+  const ev = eventsCache.find(e => e.id === eventId);
+  const signup = signupsCache.find(s =>
+    s.event_id === eventId &&
+    String(s.name || '').trim().toLowerCase() === name.toLowerCase()
+  );
+
+  if (!signup) {
+    msg.textContent = 'Hittade ingen anmälan med det namnet för aktiviteten.';
+    msg.className = 'status-msg show err';
+    return;
+  }
+
+  try {
+    if (ev && isPickupEvent(ev)) {
+      const selectedToRemove = Array.from(document.querySelectorAll('#cancelPickupWrap input:checked')).map(x => x.value);
+      const current = Array.isArray(signup.selected_locations) ? signup.selected_locations : [];
+
+      if (selectedToRemove.length) {
+        const remaining = current.filter(loc => !selectedToRemove.includes(loc));
+
+        if (remaining.length === 0) {
+          await api('/rest/v1/signups?id=eq.' + encodeURIComponent(signup.id), {
+            method: 'DELETE',
+            headers: getHeaders(false, 'return=minimal')
+          });
+          msg.textContent = 'Hela din hämtbokning har tagits bort.';
+        } else {
+          await api('/rest/v1/signups?id=eq.' + encodeURIComponent(signup.id), {
+            method: 'PATCH',
+            headers: getHeaders(false, 'return=minimal'),
+            body: JSON.stringify({ selected_locations: remaining })
+          });
+          msg.textContent = 'Valda hämtningar har avbokats.';
+        }
+      } else {
+        await api('/rest/v1/signups?id=eq.' + encodeURIComponent(signup.id), {
+          method: 'DELETE',
+          headers: getHeaders(false, 'return=minimal')
+        });
+        msg.textContent = 'Din hämtbokning har tagits bort.';
+      }
+      msg.className = 'status-msg show ok';
+    } else {
+      await api('/rest/v1/signups?id=eq.' + encodeURIComponent(signup.id), {
+        method: 'DELETE',
+        headers: getHeaders(false, 'return=minimal')
+      });
+      msg.textContent = 'Din anmälan har tagits bort.';
+      msg.className = 'status-msg show ok';
+    }
+
+    document.getElementById('cancelName').value = '';
+    document.getElementById('cancelEventSelect').value = '';
+    document.getElementById('cancelPickupWrap').classList.add('hidden');
+    document.getElementById('cancelPickupWrap').innerHTML = '';
+    document.getElementById('cancelBtn').textContent = 'Ta bort min anmälan';
+    await reloadAll();
+  } catch (err) {
+    msg.textContent = 'Kunde inte ta bort/avboka: ' + err.message;
+    msg.className = 'status-msg show err';
+  }
 }
 
 function toggleAdmin() {
