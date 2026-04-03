@@ -113,7 +113,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1>Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D2 – digital kö</div>
+    <div class="version">Version D3 – digital kö</div>
   </div>
 
   
@@ -305,6 +305,7 @@ let queueSessionsCache = [];
 let queueEntriesCache = [];
 let isCreatingQueue = false;
 let isJoiningQueue = false;
+let queuePollTimer = null;
 let isCreatingEvent = false;
 let selectedEventId = null;
 
@@ -345,6 +346,27 @@ function removeQueueEntry(queueId) {
 function getQueueLink(queueId) {
   return window.location.origin + window.location.pathname + '?queue=1&queueId=' + encodeURIComponent(queueId);
 }
+function stopQueuePolling() {
+  if (queuePollTimer) {
+    clearInterval(queuePollTimer);
+    queuePollTimer = null;
+  }
+}
+function startQueuePolling() {
+  stopQueuePolling();
+  if (!isQueueMode()) return;
+
+  queuePollTimer = setInterval(async () => {
+    try {
+      await loadQueueSessions();
+      await loadQueueEntries();
+      renderQueueView();
+    } catch (e) {
+      console.error('Queue polling error', e);
+    }
+  }, 2000);
+}
+
 
 
 function escapeHtml(v) {
@@ -1338,34 +1360,14 @@ async function assignQueueNumbers() {
   if (!waiting.length) { alert('Det finns inga väntande personer att tilldela.'); return; }
   if (!confirm('Slumpa köplatser för alla som väntar i kön?')) return;
 
-  const existing = getQueueEntriesForSession(queueId).filter(r => r.queue_number != null);
-  const maxExisting = existing.length ? Math.max(...existing.map(r => Number(r.queue_number) || 0)) : 0;
-  const shuffled = waiting.slice();
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-
-  for (let i = 0; i < shuffled.length; i++) {
-    await api('/rest/v1/queue_entries?id=eq.' + encodeURIComponent(shuffled[i].id), {
-      method: 'PATCH',
-      headers: getHeaders(true, 'return=minimal'),
-      body: JSON.stringify({
-        queue_number: maxExisting + i + 1,
-        assigned_at: new Date().toISOString(),
-        status: 'assigned'
-      })
-    });
-  }
-
-  await api('/rest/v1/queue_sessions?id=eq.' + encodeURIComponent(queueId), {
-    method: 'PATCH',
-    headers: getHeaders(true, 'return=minimal'),
+  await api('/rest/v1/rpc/assign_queue_session_numbers', {
+    method: 'POST',
+    headers: getHeaders(true),
     body: JSON.stringify({
-      queue_assigned: true,
-      queue_assigned_at: new Date().toISOString()
+      p_queue_session_id: queueId
     })
   });
+
   await reloadAll();
   renderQueueAdminPanel();
 }
@@ -1484,6 +1486,7 @@ function renderQueueView() {
   document.querySelectorAll('.admin-row').forEach(x => x.classList.add('hidden'));
   document.getElementById('adminPanel').classList.add('hidden');
   document.getElementById('queueCard').classList.remove('hidden');
+  startQueuePolling();
 
   const title = document.getElementById('queueTitle');
   const status = document.getElementById('queueStatusText');
@@ -1552,7 +1555,12 @@ async function init() {
     restoreVolunteerName();
     refreshSignupButton();
     restoreAdminSession();
-    if (isQueueMode()) renderQueueView();
+    if (isQueueMode()) {
+      renderQueueView();
+      startQueuePolling();
+    } else {
+      stopQueuePolling();
+    }
     renderCreatePickupOptions();
   } catch (err) {
     document.getElementById('eventsList').innerHTML = '<div class="empty-state">Kunde inte ladda data.<br>' + escapeHtml(err.message) + '</div>';
