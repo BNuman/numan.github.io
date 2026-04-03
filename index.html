@@ -496,7 +496,17 @@ function escapeHtml(v) {
   return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 function api(path, options = {}) {
-  return fetch(SUPABASE_URL + path, { cache: 'no-store', ...options }).then(async res => {
+  const baseHeaders = {
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+  };
+  const mergedHeaders = { ...baseHeaders, ...(options.headers || {}) };
+
+  return fetch(SUPABASE_URL + path, {
+    cache: 'no-store',
+    ...options,
+    headers: mergedHeaders
+  }).then(async res => {
     const text = await res.text();
     let data = null;
     try { data = text ? JSON.parse(text) : null; } catch (e) { data = text; }
