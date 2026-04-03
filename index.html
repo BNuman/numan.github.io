@@ -1079,56 +1079,6 @@
         populateQueueAdminSelect();
         renderAdminQueuePanel();
       }
-    });
-
-      if (n === 1) renderMgmtList();
-      if (n === 2) {
-        populateAdminSelect();
-        renderSignupList();
-      }
-      if (n === 3) {
-        populateQueueAdminSelect();
-        renderQueueAdminSummary();
-        renderAdminQueuePanel();
-      }
-    });
-      if (n === 1) renderMgmtList();
-      if (n === 2) renderSignupList();
-    }
-
-    function ensureAdmin() {
-      if (!adminSession || !adminSession.access_token || isSessionExpired(adminSession)) {
-        clearAdminSession();
-        alert('Du måste vara inloggad som admin.');
-        throw new Error('Admin session missing');
-      }
-    }
-
-    function renderAdminPickupOptions() {
-      const wrap = document.getElementById('adminPickupWrap');
-      const list = document.getElementById('adminPickupList');
-      const type = document.getElementById('newActivityType').value;
-
-      if (type !== 'hamtning') {
-        wrap.classList.add('hidden');
-        list.innerHTML = '';
-        return;
-      }
-
-      wrap.classList.remove('hidden');
-      list.innerHTML = PICKUP_LOCATIONS.map(loc => `
-        <label class="pickup-item">
-          <input type="checkbox" class="admin-pickup-choice" value="${escapeHtml(loc)}" />
-          <div>
-            <div>${escapeHtml(loc)}</div>
-            <small>Visa detta ställe för volontärerna</small>
-          </div>
-        </label>
-      `).join('');
-    }
-
-    function getAdminSelectedPickupLocations() {
-      return Array.from(document.querySelectorAll('.admin-pickup-choice:checked')).map(el => el.value);
     }
 
     async function addEvent() {
