@@ -346,14 +346,14 @@ function renderPublicEvents() {
       const allowed = getAllowedPickupLocations(ev);
       const booked = getBookedPickupLocations(ev.id);
       pickupHtml = `
-        <div style="margin-top:10px;">
+        <div style="margin-top:10px;" onclick="event.stopPropagation()">
           <div class="section-label">Välj var du kan hämta</div>
           ${allowed.map(loc => {
             const isBooked = booked.has(loc);
             return `
               <label class="pickup-option ${isBooked ? 'booked' : ''}" onclick="event.stopPropagation()">
                 <input type="checkbox" value="${escapeHtml(loc)}" ${isBooked ? 'disabled' : ''} onclick="event.stopPropagation()" onchange="refreshSignupButton()">
-                <span><strong>${escapeHtml(loc)}</strong><br><small>${isBooked ? 'Redan bokat' : 'Ledigt'}</small></span>
+                <span onclick="event.stopPropagation()"><strong>${escapeHtml(loc)}</strong><br><small>${isBooked ? 'Redan bokat' : 'Ledigt'}</small></span>
               </label>
             `;
           }).join('')}
@@ -411,7 +411,7 @@ function renderPickupSelector() {
     return `
       <label class="pickup-option ${isBooked ? 'booked' : ''}" onclick="event.stopPropagation()">
         <input type="checkbox" value="${escapeHtml(loc)}" ${isBooked ? 'disabled' : ''} onclick="event.stopPropagation()" onchange="refreshSignupButton()">
-        <span><strong>${escapeHtml(loc)}</strong><br><small>${isBooked ? 'Redan bokat' : 'Ledigt'}</small></span>
+        <span onclick="event.stopPropagation()"><strong>${escapeHtml(loc)}</strong><br><small>${isBooked ? 'Redan bokat' : 'Ledigt'}</small></span>
       </label>
     `;
   }).join('');
@@ -754,7 +754,7 @@ function renderSignupAdminList() {
           </div>
           <button class="small-btn delete" type="button" onclick="adminRemoveSignup('${row.id}')">Ta bort person</button>
         </div>
-        ${isPickupEvent(ev) ? `<div style="margin-top:10px;"><div class="section-label">Valda hämtställen</div>${locationsHtml}</div>` : ''}
+        ${isPickupEvent(ev) ? `<div style="margin-top:10px;" onclick="event.stopPropagation()"><div class="section-label">Valda hämtställen</div>${locationsHtml}</div>` : ''}
       </div>
     `;
   }).join('');
