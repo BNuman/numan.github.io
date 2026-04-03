@@ -91,6 +91,20 @@
       display:inline-block; padding:10px 14px; border-radius:12px; border:2px solid #2E7D4F;
       background:#E8F5EE; color:#2E7D4F; font-size:14px; font-weight:900; margin-bottom:16px;
     }
+  
+    .queue-status-box,.queue-link-box{border:2px solid #d1e8da;border-radius:16px;background:#f9fafb;padding:14px}
+    .queue-link-box{word-break:break-all;font-size:13px;color:#6b7280}
+    .queue-big-number{font-size:68px;line-height:1;font-weight:900;text-align:center;margin-top:12px;color:#2E7D4F}
+    .queue-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+    .queue-summary-card{border:2px solid #d1e8da;border-radius:14px;background:#f9fafb;padding:12px}
+    .queue-summary-label{font-size:11px;font-weight:900;color:#6b7280;letter-spacing:.08em;text-transform:uppercase}
+    .queue-summary-value{font-size:22px;font-weight:900;margin-top:4px}
+    .queue-row{border:2px solid #d1e8da;border-radius:16px;background:#f9fafb;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .queue-chip{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:900;background:#E3F0FF;color:#1565C0}
+    .queue-chip.assigned{background:#E8F5EE;color:#2E7D4F}
+    .queue-chip.left{background:#FDECEA;color:#C0392B}
+    .queue-create-wrap{border:2px dashed #d1e8da;border-radius:16px;background:#fbfdfb;padding:14px;margin-bottom:14px}
+
   </style>
 </head>
 <body>
@@ -98,8 +112,25 @@
   <div class="logo-area">
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
-    <h1>Volontäraktiviteter</h1>
-    <div class="version">Version B – anmälan</div>
+    <h1>Volontäraktiviteter & digital kö</h1>
+    <div class="version">Version D1 – digital kö</div>
+  </div>
+
+  
+  <div class="card hidden" id="queueCard">
+    <div class="section-label">Digital kö</div>
+    <div class="confirm-title" id="queueTitle" style="font-size:20px;margin-bottom:10px;">Registrering</div>
+    <div class="queue-status-box">
+      <div id="queueStatusText" style="font-size:14px;line-height:1.6;color:#6b7280;">Laddar köinformation…</div>
+      <div id="queueBigNumber" class="queue-big-number hidden">0</div>
+    </div>
+    <div class="input-group" id="queueNameWrap" style="margin-top:14px;">
+      <div class="section-label">Ditt namn (valfritt)</div>
+      <input type="text" id="queueNameInput" placeholder="Skriv ditt namn om du vill" maxlength="50">
+    </div>
+    <div id="queuePublicStatus" class="status-msg"></div>
+    <button class="submit-btn" type="button" onclick="joinQueue()">Ställ mig i kön</button>
+    <button class="reset-btn hidden" type="button" id="queueLeaveBtn" onclick="leaveQueue()" style="margin-top:10px;">Lämna kön</button>
   </div>
 
   <div class="card">
@@ -169,6 +200,7 @@
         <button class="atab active" type="button" id="tabBtn0" onclick="switchTab(0)">➕ Skapa</button>
         <button class="atab" type="button" id="tabBtn1" onclick="switchTab(1)">📅 Hantera</button>
         <button class="atab" type="button" id="tabBtn2" onclick="switchTab(2)">📋 Anmälningar</button>
+        <button class="atab" type="button" id="tabBtn3" onclick="switchTab(3)">🎟️ Digital kö</button>
       </div>
 
       <div id="tab0">
@@ -215,6 +247,40 @@
         </div>
         <div id="adminSignupList"><div class="empty-state">Ingen aktivitet vald.</div></div>
       </div>
+
+      <div id="tab3" class="hidden">
+        <div class="queue-create-wrap">
+          <div class="section-label">Skapa digital kö</div>
+          <div class="input-group"><input type="text" id="newQueueTitle" placeholder="t.ex. Torsdag matutdelning"></div>
+          <div class="input-group"><input type="date" id="newQueueDate"></div>
+          <div class="input-group"><input type="text" id="newQueueTime" placeholder="t.ex. 17:55"></div>
+          <div class="input-group"><input type="text" id="newQueueLocation" placeholder="t.ex. Frölunda"></div>
+          <button class="create-btn" type="button" id="createQueueBtn" onclick="createQueueSession()">➕ Skapa digital kö</button>
+          <div class="success-msg" id="createQueueSuccess">✅ Digital kö skapad!</div>
+          <div class="status-msg" id="createQueueError"></div>
+        </div>
+
+        <div class="input-group">
+          <div class="section-label">Välj digital kö</div>
+          <select id="adminQueueSelect" onchange="renderQueueAdminPanel()"><option value="">— Välj kö —</option></select>
+        </div>
+        <div class="queue-status-box" id="queueAdminSummary"><div class="empty-state">Ingen kö vald.</div></div>
+        <div id="queueLinkWrap" class="hidden" style="margin-top:12px;">
+          <div class="section-label">QR-länk att använda</div>
+          <div class="queue-link-box" id="queueLinkBox"></div>
+        </div>
+        <div class="admin-actions">
+          <button class="mini-btn active" type="button" onclick="openQueue()">Öppna kö</button>
+          <button class="mini-btn delete" type="button" onclick="closeQueue()">Stäng kö</button>
+          <button class="mini-btn" type="button" onclick="assignQueueNumbers()">Slumpa köplatser</button>
+        </div>
+        <div class="admin-actions" style="margin-top:8px;">
+          <button class="mini-btn" type="button" onclick="addManualQueueEntry()">Lägg till utan mobil</button>
+          <button class="mini-btn delete" type="button" onclick="clearQueueSession()">Rensa hela kön</button>
+        </div>
+        <div id="queueAdminList" style="margin-top:12px;"><div class="empty-state">Ingen kö vald.</div></div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -224,6 +290,7 @@ const SUPABASE_URL = 'https://azmvdeynrqaldlqsmwkt.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6bXZkZXlucnFhbGRscXNtd2t0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNjAxODYsImV4cCI6MjA5MDczNjE4Nn0.GTKzntDmk4bV1bomnzPPr3Xs0IuwqjuoIv7XSvi3F9M';
 const ADMIN_SESSION_KEY = 'hf_admin_session_v3';
 const VOLUNTEER_NAME_KEY = 'hf_volunteer_name_v3';
+const QUEUE_ENTRY_KEY = 'hf_queue_entry_map_v4';
 const PICKUP_LOCATIONS = [
   "Brogyllen Landala","Hemköp Guldheden","Willys Sten Sturegatan","Willys Heden","Willys Majorna",
   "Dahls Sisjön","Willys Påvelund","Willys Kaverös","Willys Tuve","Willys Hemma Torslanda",
@@ -234,6 +301,10 @@ const PICKUP_LOCATIONS = [
 let adminSession = JSON.parse(localStorage.getItem(ADMIN_SESSION_KEY) || 'null');
 let eventsCache = [];
 let signupsCache = [];
+let queueSessionsCache = [];
+let queueEntriesCache = [];
+let isCreatingQueue = false;
+let isJoiningQueue = false;
 let isCreatingEvent = false;
 let selectedEventId = null;
 
@@ -246,6 +317,35 @@ function restoreVolunteerName() {
   const input = document.getElementById('nameInput');
   if (input && !input.value && saved) input.value = saved;
 }
+
+function getQueueIdFromUrl() {
+  const p = new URLSearchParams(window.location.search);
+  return p.get('queueId');
+}
+function isQueueMode() {
+  const p = new URLSearchParams(window.location.search);
+  return p.get('queue') === '1' || !!p.get('queueId');
+}
+function getQueueMap() {
+  try { return JSON.parse(localStorage.getItem(QUEUE_ENTRY_KEY) || '{}'); } catch(e) { return {}; }
+}
+function setQueueEntry(queueId, entryId) {
+  const map = getQueueMap();
+  map[queueId] = entryId;
+  localStorage.setItem(QUEUE_ENTRY_KEY, JSON.stringify(map));
+}
+function getQueueEntry(queueId) {
+  return getQueueMap()[queueId] || null;
+}
+function removeQueueEntry(queueId) {
+  const map = getQueueMap();
+  delete map[queueId];
+  localStorage.setItem(QUEUE_ENTRY_KEY, JSON.stringify(map));
+}
+function getQueueLink(queueId) {
+  return window.location.origin + window.location.pathname + '?queue=1&queueId=' + encodeURIComponent(queueId);
+}
+
 
 function escapeHtml(v) {
   return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -309,15 +409,23 @@ async function loadEvents() {
 async function loadSignups() {
   signupsCache = await api('/rest/v1/signups?select=*&order=created_at.asc');
 }
+async function loadQueueSessions() {
+  queueSessionsCache = await api('/rest/v1/queue_sessions?select=*&order=created_at.desc');
+}
+async function loadQueueEntries() {
+  queueEntriesCache = await api('/rest/v1/queue_entries?select=*&order=joined_at.asc');
+}
 async function reloadAll() {
   const selectedAdminEvent = document.getElementById('adminEventSelect')?.value || '';
   const selectedCancelEvent = document.getElementById('cancelEventSelect')?.value || '';
+  const selectedQueue = document.getElementById('adminQueueSelect')?.value || '';
 
-  await Promise.all([loadEvents(), loadSignups()]);
+  await Promise.all([loadEvents(), loadSignups(), loadQueueSessions(), loadQueueEntries()]);
   renderPublicEvents();
   renderMgmtList();
   populateCancelSelect();
   populateAdminEventSelect();
+  populateQueueSelect();
 
   if (selectedAdminEvent) {
     const sel = document.getElementById('adminEventSelect');
@@ -332,6 +440,13 @@ async function reloadAll() {
       sel.value = selectedCancelEvent;
     }
   }
+  if (selectedQueue) {
+    const sel = document.getElementById('adminQueueSelect');
+    if (sel && [...sel.options].some(o => o.value === selectedQueue)) {
+      sel.value = selectedQueue;
+    }
+  }
+  if (isQueueMode()) renderQueueView();
 }
 
 function renderPublicEvents() {
@@ -900,13 +1015,17 @@ function restoreAdminSession() {
   }
 }
 function switchTab(n) {
-  [0,1,2].forEach(i => {
+  [0,1,2,3].forEach(i => {
     document.getElementById('tabBtn' + i).classList.toggle('active', i === n);
     document.getElementById('tab' + i).classList.toggle('hidden', i !== n);
   });
   if (n === 2) {
     populateAdminEventSelect();
     renderSignupAdminList();
+  }
+  if (n === 3) {
+    populateQueueSelect();
+    renderQueueAdminPanel();
   }
 }
 function showCreateError(text) {
@@ -1033,12 +1152,361 @@ async function deleteEvent(id) {
 }
 
 
+
+function showQueueCreateError(text) {
+  const el = document.getElementById('createQueueError');
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'status-msg show err';
+}
+function hideQueueCreateError() {
+  const el = document.getElementById('createQueueError');
+  if (!el) return;
+  el.textContent = '';
+  el.className = 'status-msg';
+}
+function populateQueueSelect() {
+  const sel = document.getElementById('adminQueueSelect');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Välj kö —</option>' + queueSessionsCache.filter(q => q.active !== false).map(q =>
+    `<option value="${q.id}">${escapeHtml(q.title)}${q.date ? ' (' + escapeHtml(q.date) + ')' : ''}</option>`
+  ).join('');
+}
+function getQueueEntriesForSession(queueId) {
+  return queueEntriesCache.filter(q => q.queue_session_id === queueId);
+}
+async function createQueueSession() {
+  ensureAdmin();
+  if (isCreatingQueue) return;
+
+  const btn = document.getElementById('createQueueBtn');
+  const title = document.getElementById('newQueueTitle').value.trim();
+  const date = document.getElementById('newQueueDate').value;
+  const time = document.getElementById('newQueueTime').value.trim();
+  const location = document.getElementById('newQueueLocation').value.trim();
+
+  hideQueueCreateError();
+  if (!title) {
+    showQueueCreateError('Ange namn på den digitala kön.');
+    return;
+  }
+
+  try {
+    isCreatingQueue = true;
+    btn.disabled = true;
+    await api('/rest/v1/queue_sessions', {
+      method: 'POST',
+      headers: getHeaders(true, 'return=minimal'),
+      body: JSON.stringify([{
+        title,
+        date: date || null,
+        time: time || null,
+        location: location || null,
+        active: true,
+        queue_open: false,
+        queue_assigned: false,
+        queue_assigned_at: null
+      }])
+    });
+    document.getElementById('newQueueTitle').value = '';
+    document.getElementById('newQueueDate').value = '';
+    document.getElementById('newQueueTime').value = '';
+    document.getElementById('newQueueLocation').value = '';
+    document.getElementById('createQueueSuccess').classList.add('show');
+    setTimeout(() => document.getElementById('createQueueSuccess').classList.remove('show'), 2500);
+    await reloadAll();
+    switchTab(3);
+  } catch (err) {
+    showQueueCreateError('Kunde inte skapa digital kö: ' + err.message);
+  } finally {
+    isCreatingQueue = false;
+    btn.disabled = false;
+  }
+}
+function renderQueueAdminPanel() {
+  const queueId = document.getElementById('adminQueueSelect')?.value;
+  const summary = document.getElementById('queueAdminSummary');
+  const list = document.getElementById('queueAdminList');
+  const linkWrap = document.getElementById('queueLinkWrap');
+  const linkBox = document.getElementById('queueLinkBox');
+  if (!summary || !list || !linkWrap || !linkBox) return;
+
+  if (!queueId) {
+    summary.innerHTML = '<div class="empty-state">Ingen kö vald.</div>';
+    list.innerHTML = '<div class="empty-state">Ingen kö vald.</div>';
+    linkWrap.classList.add('hidden');
+    return;
+  }
+
+  const session = queueSessionsCache.find(q => q.id === queueId);
+  const rows = getQueueEntriesForSession(queueId);
+  const waiting = rows.filter(r => r.status === 'waiting').length;
+  const assigned = rows.filter(r => r.status === 'assigned').length;
+  const left = rows.filter(r => r.status === 'left').length;
+
+  summary.innerHTML = `
+    <div style="font-weight:900;margin-bottom:6px;">${escapeHtml(session.title)}</div>
+    <div style="font-size:13px;color:#6b7280;line-height:1.5;">
+      Status: <strong>${session.queue_open ? 'Öppen' : 'Stängd'}</strong><br>
+      Väntar: <strong>${waiting}</strong> · Fått köplats: <strong>${assigned}</strong> · Lämnat kön: <strong>${left}</strong>
+    </div>
+    <div class="queue-summary">
+      <div class="queue-summary-card"><div class="queue-summary-label">Totalt i kön</div><div class="queue-summary-value">${rows.length}</div></div>
+      <div class="queue-summary-card"><div class="queue-summary-label">Väntar</div><div class="queue-summary-value">${waiting}</div></div>
+      <div class="queue-summary-card"><div class="queue-summary-label">Köplats</div><div class="queue-summary-value">${assigned}</div></div>
+      <div class="queue-summary-card"><div class="queue-summary-label">Lämnat kön</div><div class="queue-summary-value">${left}</div></div>
+    </div>
+  `;
+  linkWrap.classList.remove('hidden');
+  linkBox.textContent = getQueueLink(queueId);
+
+  if (!rows.length) {
+    list.innerHTML = '<div class="empty-state">Ingen står i kön ännu.</div>';
+    return;
+  }
+
+  const sorted = rows.slice().sort((a,b) => {
+    const ax = a.queue_number == null ? 9999 : a.queue_number;
+    const bx = b.queue_number == null ? 9999 : b.queue_number;
+    if (ax !== bx) return ax - bx;
+    return new Date(a.joined_at) - new Date(b.joined_at);
+  });
+
+  list.innerHTML = sorted.map(row => `
+    <div class="queue-row">
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:800;">${escapeHtml(row.display_name || 'Deltagare')}</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:3px;">${row.has_mobile ? 'Mobil' : 'Utan mobil'} · Registrerad ${new Date(row.joined_at).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div class="queue-chip ${row.status === 'assigned' ? 'assigned' : row.status === 'left' ? 'left' : ''}">
+          ${row.status === 'assigned' ? 'Köplats ' + row.queue_number : row.status === 'left' ? 'Lämnat kön' : 'Väntar'}
+        </div>
+        <button class="small-btn delete" type="button" onclick="removeQueuePerson('${row.id}')">Ta bort</button>
+      </div>
+    </div>
+  `).join('');
+}
+async function openQueue() {
+  ensureAdmin();
+  const queueId = document.getElementById('adminQueueSelect')?.value;
+  if (!queueId) { alert('Välj en kö först.'); return; }
+  await api('/rest/v1/queue_sessions?id=eq.' + encodeURIComponent(queueId), {
+    method: 'PATCH',
+    headers: getHeaders(true, 'return=minimal'),
+    body: JSON.stringify({ queue_open: true })
+  });
+  await reloadAll();
+  renderQueueAdminPanel();
+}
+async function closeQueue() {
+  ensureAdmin();
+  const queueId = document.getElementById('adminQueueSelect')?.value;
+  if (!queueId) { alert('Välj en kö först.'); return; }
+  await api('/rest/v1/queue_sessions?id=eq.' + encodeURIComponent(queueId), {
+    method: 'PATCH',
+    headers: getHeaders(true, 'return=minimal'),
+    body: JSON.stringify({ queue_open: false })
+  });
+  await reloadAll();
+  renderQueueAdminPanel();
+}
+async function addManualQueueEntry() {
+  ensureAdmin();
+  const queueId = document.getElementById('adminQueueSelect')?.value;
+  if (!queueId) { alert('Välj en kö först.'); return; }
+  const name = prompt('Skriv ett namn eller en etikett för personen utan mobil:', 'Utan mobil');
+  if (!name) return;
+  await api('/rest/v1/queue_entries', {
+    method: 'POST',
+    headers: getHeaders(true, 'return=representation'),
+    body: JSON.stringify([{
+      queue_session_id: queueId,
+      display_name: name.trim(),
+      has_mobile: false,
+      status: 'waiting'
+    }])
+  });
+  await reloadAll();
+  renderQueueAdminPanel();
+}
+async function assignQueueNumbers() {
+  ensureAdmin();
+  const queueId = document.getElementById('adminQueueSelect')?.value;
+  if (!queueId) { alert('Välj en kö först.'); return; }
+  const waiting = getQueueEntriesForSession(queueId).filter(r => r.status === 'waiting');
+  if (!waiting.length) { alert('Det finns inga väntande personer att tilldela.'); return; }
+  if (!confirm('Slumpa köplatser för alla som väntar i kön?')) return;
+
+  const existing = getQueueEntriesForSession(queueId).filter(r => r.queue_number != null);
+  const maxExisting = existing.length ? Math.max(...existing.map(r => Number(r.queue_number) || 0)) : 0;
+  const shuffled = waiting.slice().sort(() => Math.random() - 0.5);
+
+  for (let i = 0; i < shuffled.length; i++) {
+    await api('/rest/v1/queue_entries?id=eq.' + encodeURIComponent(shuffled[i].id), {
+      method: 'PATCH',
+      headers: getHeaders(true, 'return=minimal'),
+      body: JSON.stringify({
+        queue_number: maxExisting + i + 1,
+        assigned_at: new Date().toISOString(),
+        status: 'assigned'
+      })
+    });
+  }
+
+  await api('/rest/v1/queue_sessions?id=eq.' + encodeURIComponent(queueId), {
+    method: 'PATCH',
+    headers: getHeaders(true, 'return=minimal'),
+    body: JSON.stringify({
+      queue_assigned: true,
+      queue_assigned_at: new Date().toISOString()
+    })
+  });
+  await reloadAll();
+  renderQueueAdminPanel();
+}
+async function removeQueuePerson(id) {
+  ensureAdmin();
+  if (!confirm('Ta bort denna person från kön?')) return;
+  await api('/rest/v1/queue_entries?id=eq.' + encodeURIComponent(id), {
+    method: 'DELETE',
+    headers: getHeaders(true, 'return=minimal')
+  });
+  await reloadAll();
+  renderQueueAdminPanel();
+}
+async function clearQueueSession() {
+  ensureAdmin();
+  const queueId = document.getElementById('adminQueueSelect')?.value;
+  if (!queueId) { alert('Välj en kö först.'); return; }
+  if (!confirm('Rensa hela kön?')) return;
+  await api('/rest/v1/queue_entries?queue_session_id=eq.' + encodeURIComponent(queueId), {
+    method: 'DELETE',
+    headers: getHeaders(true, 'return=minimal')
+  });
+  await api('/rest/v1/queue_sessions?id=eq.' + encodeURIComponent(queueId), {
+    method: 'PATCH',
+    headers: getHeaders(true, 'return=minimal'),
+    body: JSON.stringify({ queue_open: false, queue_assigned: false, queue_assigned_at: null })
+  });
+  removeQueueEntry(queueId);
+  await reloadAll();
+  renderQueueAdminPanel();
+}
+async function joinQueue() {
+  const queueId = getQueueIdFromUrl();
+  const session = queueSessionsCache.find(q => q.id === queueId);
+  const statusEl = document.getElementById('queuePublicStatus');
+  const name = document.getElementById('queueNameInput')?.value?.trim() || '';
+  if (!session) {
+    statusEl.textContent = 'Kön kunde inte hittas.';
+    statusEl.className = 'status-msg show err';
+    return;
+  }
+  if (!session.queue_open) {
+    statusEl.textContent = 'Kön är inte öppen ännu.';
+    statusEl.className = 'status-msg show err';
+    return;
+  }
+  if (isJoiningQueue) return;
+
+  try {
+    isJoiningQueue = true;
+    const rows = await api('/rest/v1/queue_entries', {
+      method: 'POST',
+      headers: getHeaders(false, 'return=representation'),
+      body: JSON.stringify([{
+        queue_session_id: queueId,
+        display_name: name || 'Deltagare',
+        has_mobile: true,
+        status: 'waiting'
+      }])
+    });
+    const created = Array.isArray(rows) ? rows[0] : rows;
+    if (created?.id) setQueueEntry(queueId, created.id);
+    await reloadAll();
+  } catch (err) {
+    statusEl.textContent = 'Kunde inte ställa dig i kön: ' + err.message;
+    statusEl.className = 'status-msg show err';
+  } finally {
+    isJoiningQueue = false;
+  }
+}
+async function leaveQueue() {
+  const queueId = getQueueIdFromUrl();
+  const entryId = getQueueEntry(queueId);
+  if (!entryId) return;
+  await api('/rest/v1/queue_entries?id=eq.' + encodeURIComponent(entryId), {
+    method: 'PATCH',
+    headers: getHeaders(false, 'return=minimal'),
+    body: JSON.stringify({ status: 'left' })
+  });
+  removeQueueEntry(queueId);
+  await reloadAll();
+}
+function renderQueueView() {
+  const queueId = getQueueIdFromUrl();
+  const session = queueSessionsCache.find(q => q.id === queueId);
+  const entryId = getQueueEntry(queueId);
+  const entry = queueEntriesCache.find(q => q.id === entryId && q.queue_session_id === queueId);
+
+  document.querySelector('.card:not(#queueCard)').classList.add('hidden');
+  document.querySelectorAll('.admin-row').forEach(x => x.classList.add('hidden'));
+  document.getElementById('adminPanel').classList.add('hidden');
+  document.getElementById('queueCard').classList.remove('hidden');
+
+  const title = document.getElementById('queueTitle');
+  const status = document.getElementById('queueStatusText');
+  const big = document.getElementById('queueBigNumber');
+  const leaveBtn = document.getElementById('queueLeaveBtn');
+  const nameWrap = document.getElementById('queueNameWrap');
+
+  if (!session) {
+    title.textContent = 'Digital kö';
+    status.textContent = 'Kön kunde inte hittas.';
+    big.classList.add('hidden');
+    leaveBtn.classList.add('hidden');
+    return;
+  }
+
+  title.textContent = session.title + (session.date ? ' · ' + session.date : '');
+
+  if (!entry) {
+    big.classList.add('hidden');
+    leaveBtn.classList.add('hidden');
+    nameWrap.classList.remove('hidden');
+    status.textContent = session.queue_open ? 'Tryck nedan för att ställa dig i kön.' : 'Kön är stängd just nu.';
+    return;
+  }
+
+  nameWrap.classList.add('hidden');
+  leaveBtn.classList.remove('hidden');
+
+  if (entry.status === 'left') {
+    status.textContent = 'Du har lämnat kön.';
+    big.classList.add('hidden');
+    leaveBtn.classList.add('hidden');
+    return;
+  }
+
+  if (entry.queue_number != null) {
+    status.textContent = 'Din köplats är:';
+    big.textContent = entry.queue_number;
+    big.classList.remove('hidden');
+    return;
+  }
+
+  status.textContent = 'Du är registrerad. Vänta här tills köplatserna delas ut.';
+  big.classList.add('hidden');
+}
+
 async function init() {
   try {
     await reloadAll();
     restoreVolunteerName();
     refreshSignupButton();
     restoreAdminSession();
+    if (isQueueMode()) renderQueueView();
     renderCreatePickupOptions();
   } catch (err) {
     document.getElementById('eventsList').innerHTML = '<div class="empty-state">Kunde inte ladda data.<br>' + escapeHtml(err.message) + '</div>';
