@@ -70,6 +70,14 @@
     .mini-btn.active { background:#E8F5EE; color:#2E7D4F; border-color:#2E7D4F; }
     .mini-btn.delete { background:#FDECEA; color:#C0392B; border-color:#F3C1BA; }
     .success-msg { display:none; margin-top:10px; font-size:13px; font-weight:900; text-align:center; color:#2E7D4F; }
+    .signup-admin-card { border:2px solid #d1e8da; border-radius:16px; background:#f9fafb; padding:12px; margin-bottom:10px; }
+    .signup-admin-header { display:flex; gap:10px; align-items:flex-start; justify-content:space-between; }
+    .signup-admin-name { font-weight:900; font-size:15px; }
+    .signup-admin-sub { font-size:12px; color:#6b7280; margin-top:3px; font-weight:700; }
+    .pickup-item-row { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 10px; border:2px solid #dfe9e2; border-radius:12px; background:#fff; margin-top:8px; }
+    .small-btn { padding:7px 10px; border:none; border-radius:10px; font-size:11px; font-weight:900; font-family:'Nunito',sans-serif; cursor:pointer; }
+    .small-btn.delete { background:#FDECEA; color:#C0392B; }
+    .small-btn.export { background:#E3F0FF; color:#1565C0; }
     .success-msg.show { display:block; }
     .confirm-screen { text-align:center; }
     .confirm-icon { font-size:58px; display:block; margin-bottom:10px; }
@@ -156,6 +164,7 @@
       <div class="admin-tabs">
         <button class="atab active" type="button" id="tabBtn0" onclick="switchTab(0)">➕ Skapa</button>
         <button class="atab" type="button" id="tabBtn1" onclick="switchTab(1)">📅 Hantera</button>
+        <button class="atab" type="button" id="tabBtn2" onclick="switchTab(2)">📋 Anmälningar</button>
       </div>
 
       <div id="tab0">
@@ -189,6 +198,14 @@
 
       <div id="tab1" class="hidden">
         <div id="mgmtList"></div>
+      </div>
+
+      <div id="tab2" class="hidden">
+        <div class="input-group">
+          <div class="section-label">Välj aktivitet</div>
+          <select id="adminEventSelect" onchange="renderSignupAdminList()"><option value="">— Välj aktivitet —</option></select>
+        </div>
+        <div id="adminSignupList"><div class="empty-state">Ingen aktivitet vald.</div></div>
       </div>
     </div>
   </div>
@@ -272,6 +289,7 @@ async function reloadAll() {
   renderPublicEvents();
   renderMgmtList();
   populateCancelSelect();
+  populateAdminEventSelect();
 }
 
 function renderPublicEvents() {
@@ -649,6 +667,97 @@ async function doCancel() {
   }
 }
 
+
+function populateAdminEventSelect() {
+  const sel = document.getElementById('adminEventSelect');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Välj aktivitet —</option>' + eventsCache.map(ev =>
+    `<option value="${ev.id}">${escapeHtml(ev.day_name)} ${escapeHtml(ev.date)} · ${isPickupEvent(ev) ? 'Hämtning' : 'Matutdelning'}</option>`
+  ).join('');
+}
+function renderSignupAdminList() {
+  const eventId = document.getElementById('adminEventSelect')?.value;
+  const el = document.getElementById('adminSignupList');
+  if (!el) return;
+
+  if (!eventId) {
+    el.innerHTML = '<div class="empty-state">Ingen aktivitet vald.</div>';
+    return;
+  }
+
+  const ev = eventsCache.find(e => e.id === eventId);
+  const rows = signupsCache.filter(s => s.event_id === eventId);
+
+  if (!rows.length) {
+    el.innerHTML = '<div class="empty-state">Inga anmälningar till denna aktivitet.</div>';
+    return;
+  }
+
+  el.innerHTML = rows.map(row => {
+    const locations = Array.isArray(row.selected_locations) ? row.selected_locations : [];
+    const locationsHtml = isPickupEvent(ev)
+      ? (locations.length
+          ? locations.map(loc => `
+            <div class="pickup-item-row">
+              <div style="font-size:12px;font-weight:800;">${escapeHtml(loc)}</div>
+              <button class="small-btn delete" type="button" onclick="adminRemovePickupLocation('${row.id}', '${encodeURIComponent(loc)}')">Ta bort</button>
+            </div>
+          `).join('')
+          : '<div class="signup-admin-sub">Inga hämtställen valda.</div>')
+      : '';
+
+    return `
+      <div class="signup-admin-card">
+        <div class="signup-admin-header">
+          <div style="flex:1;min-width:0;">
+            <div class="signup-admin-name">${escapeHtml(row.name)}</div>
+            <div class="signup-admin-sub">${row.is_waitlist ? 'Reserv' : 'Bekräftad'}${isPickupEvent(ev) ? ' · Hämtning' : ' · Matutdelning'}</div>
+          </div>
+          <button class="small-btn delete" type="button" onclick="adminRemoveSignup('${row.id}')">Ta bort person</button>
+        </div>
+        ${isPickupEvent(ev) ? `<div style="margin-top:10px;"><div class="section-label">Valda hämtställen</div>${locationsHtml}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+async function adminRemoveSignup(signupId) {
+  ensureAdmin();
+  if (!confirm('Ta bort hela denna anmälan?')) return;
+  await api('/rest/v1/signups?id=eq.' + encodeURIComponent(signupId), {
+    method: 'DELETE',
+    headers: getHeaders(true, 'return=minimal')
+  });
+  await reloadAll();
+  renderSignupAdminList();
+}
+async function adminRemovePickupLocation(signupId, encodedLoc) {
+  ensureAdmin();
+  const loc = decodeURIComponent(encodedLoc);
+  const row = signupsCache.find(s => s.id === signupId);
+  if (!row) return;
+
+  const current = Array.isArray(row.selected_locations) ? row.selected_locations : [];
+  const remaining = current.filter(x => x !== loc);
+
+  if (!confirm('Ta bort detta hämtställe från volontären?')) return;
+
+  if (!remaining.length) {
+    await api('/rest/v1/signups?id=eq.' + encodeURIComponent(signupId), {
+      method: 'DELETE',
+      headers: getHeaders(true, 'return=minimal')
+    });
+  } else {
+    await api('/rest/v1/signups?id=eq.' + encodeURIComponent(signupId), {
+      method: 'PATCH',
+      headers: getHeaders(true, 'return=minimal'),
+      body: JSON.stringify({ selected_locations: remaining })
+    });
+  }
+
+  await reloadAll();
+  renderSignupAdminList();
+}
+
 function toggleAdmin() {
   document.getElementById('adminPanel').classList.toggle('show');
 }
@@ -693,10 +802,14 @@ function restoreAdminSession() {
   }
 }
 function switchTab(n) {
-  [0,1].forEach(i => {
+  [0,1,2].forEach(i => {
     document.getElementById('tabBtn' + i).classList.toggle('active', i === n);
     document.getElementById('tab' + i).classList.toggle('hidden', i !== n);
   });
+  if (n === 2) {
+    populateAdminEventSelect();
+    renderSignupAdminList();
+  }
 }
 function showCreateError(text) {
   const el = document.getElementById('createError');
