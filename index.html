@@ -113,7 +113,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1>Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D1 – digital kö</div>
+    <div class="version">Version D2 – digital kö</div>
   </div>
 
   
@@ -129,7 +129,7 @@
       <input type="text" id="queueNameInput" placeholder="Skriv ditt namn om du vill" maxlength="50">
     </div>
     <div id="queuePublicStatus" class="status-msg"></div>
-    <button class="submit-btn" type="button" onclick="joinQueue()">Ställ mig i kön</button>
+    <button class="submit-btn" type="button" id="queueJoinBtn" onclick="joinQueue()">Ställ mig i kön</button>
     <button class="reset-btn hidden" type="button" id="queueLeaveBtn" onclick="leaveQueue()" style="margin-top:10px;">Lämna kön</button>
   </div>
 
@@ -1340,7 +1340,11 @@ async function assignQueueNumbers() {
 
   const existing = getQueueEntriesForSession(queueId).filter(r => r.queue_number != null);
   const maxExisting = existing.length ? Math.max(...existing.map(r => Number(r.queue_number) || 0)) : 0;
-  const shuffled = waiting.slice().sort(() => Math.random() - 0.5);
+  const shuffled = waiting.slice();
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
 
   for (let i = 0; i < shuffled.length; i++) {
     await api('/rest/v1/queue_entries?id=eq.' + encodeURIComponent(shuffled[i].id), {
@@ -1397,21 +1401,46 @@ async function joinQueue() {
   const queueId = getQueueIdFromUrl();
   const session = queueSessionsCache.find(q => q.id === queueId);
   const statusEl = document.getElementById('queuePublicStatus');
+  const joinBtn = document.getElementById('queueJoinBtn');
   const name = document.getElementById('queueNameInput')?.value?.trim() || '';
+
   if (!session) {
     statusEl.textContent = 'Kön kunde inte hittas.';
     statusEl.className = 'status-msg show err';
     return;
   }
   if (!session.queue_open) {
-    statusEl.textContent = 'Kön är inte öppen ännu.';
-    statusEl.className = 'status-msg show err';
     return;
   }
   if (isJoiningQueue) return;
 
+  const existingLocalEntryId = getQueueEntry(queueId);
+  const existingLocalEntry = queueEntriesCache.find(q =>
+    q.id === existingLocalEntryId &&
+    q.queue_session_id === queueId &&
+    q.status !== 'left'
+  );
+  if (existingLocalEntry) {
+    await reloadAll();
+    return;
+  }
+
+  const normalizedName = (name || 'Deltagare').trim().toLowerCase();
+  const sameNameExisting = queueEntriesCache.find(q =>
+    q.queue_session_id === queueId &&
+    q.status !== 'left' &&
+    String(q.display_name || '').trim().toLowerCase() === normalizedName
+  );
+  if (sameNameExisting) {
+    setQueueEntry(queueId, sameNameExisting.id);
+    await reloadAll();
+    return;
+  }
+
   try {
     isJoiningQueue = true;
+    if (joinBtn) joinBtn.disabled = true;
+
     const rows = await api('/rest/v1/queue_entries', {
       method: 'POST',
       headers: getHeaders(false, 'return=representation'),
@@ -1430,6 +1459,7 @@ async function joinQueue() {
     statusEl.className = 'status-msg show err';
   } finally {
     isJoiningQueue = false;
+    if (joinBtn) joinBtn.disabled = false;
   }
 }
 async function leaveQueue() {
@@ -1460,12 +1490,18 @@ function renderQueueView() {
   const big = document.getElementById('queueBigNumber');
   const leaveBtn = document.getElementById('queueLeaveBtn');
   const nameWrap = document.getElementById('queueNameWrap');
+  const joinBtn = document.getElementById('queueJoinBtn');
+  const publicStatus = document.getElementById('queuePublicStatus');
+
+  publicStatus.textContent = '';
+  publicStatus.className = 'status-msg';
 
   if (!session) {
     title.textContent = 'Digital kö';
     status.textContent = 'Kön kunde inte hittas.';
     big.classList.add('hidden');
     leaveBtn.classList.add('hidden');
+    if (joinBtn) joinBtn.classList.add('hidden');
     return;
   }
 
@@ -1475,7 +1511,14 @@ function renderQueueView() {
     big.classList.add('hidden');
     leaveBtn.classList.add('hidden');
     nameWrap.classList.remove('hidden');
-    status.textContent = session.queue_open ? 'Tryck nedan för att ställa dig i kön.' : 'Kön är stängd just nu.';
+    if (joinBtn) {
+      joinBtn.classList.remove('hidden');
+      joinBtn.disabled = !session.queue_open;
+      joinBtn.textContent = session.queue_open ? 'Ställ mig i kön' : 'Kön är inte öppen just nu';
+    }
+    status.textContent = session.queue_open
+      ? 'Tryck nedan för att ställa dig i kön.'
+      : 'Kön är stängd just nu. Registrering öppnar när personalen öppnar kön.';
     return;
   }
 
@@ -1486,6 +1529,7 @@ function renderQueueView() {
     status.textContent = 'Du har lämnat kön.';
     big.classList.add('hidden');
     leaveBtn.classList.add('hidden');
+    if (joinBtn) joinBtn.classList.add('hidden');
     return;
   }
 
@@ -1493,11 +1537,13 @@ function renderQueueView() {
     status.textContent = 'Din köplats är:';
     big.textContent = entry.queue_number;
     big.classList.remove('hidden');
+    if (joinBtn) joinBtn.classList.add('hidden');
     return;
   }
 
   status.textContent = 'Du är registrerad. Vänta här tills köplatserna delas ut.';
   big.classList.add('hidden');
+  if (joinBtn) joinBtn.classList.add('hidden');
 }
 
 async function init() {
