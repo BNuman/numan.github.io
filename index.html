@@ -755,10 +755,10 @@
     if ([...queueSelect.options].some(o => o.value === selectedQueueEvent)) {
       queueSelect.value = selectedQueueEvent;
     }
-    renderQueueAdminList();
+    renderAdminQueuePanel();
   }
 
-  renderQueuePublicState();
+  if (isQueueMode()) renderQueueView();
 }
 
     function renderPublicEvents() {
@@ -768,6 +768,8 @@
       if (!active.length) {
         el.innerHTML = '<div class="empty-state">Ingen aktivitet just nu.</div>';
         document.getElementById('submitBtn').disabled = true;
+        selectedEventId = null;
+        refreshSubmitBtn();
         return;
       }
 
@@ -1012,7 +1014,9 @@
     }
 
     function toggleAdmin() {
-      document.getElementById('adminPanel').classList.toggle('show');
+      const panel = document.getElementById('adminPanel');
+      if (!panel) return;
+      panel.classList.toggle('show');
     }
 
     async function doLogin() {
@@ -1073,8 +1077,19 @@
       }
       if (n === 3) {
         populateQueueAdminSelect();
+        renderAdminQueuePanel();
+      }
+    });
+
+      if (n === 1) renderMgmtList();
+      if (n === 2) {
+        populateAdminSelect();
+        renderSignupList();
+      }
+      if (n === 3) {
+        populateQueueAdminSelect();
         renderQueueAdminSummary();
-        renderQueueAdminList();
+        renderAdminQueuePanel();
       }
     });
       if (n === 1) renderMgmtList();
@@ -1254,9 +1269,11 @@
     }
 
     function renderSignupList() {
-      const evId = document.getElementById('adminEventSelect').value;
+      const evId = document.getElementById('adminEventSelect')?.value;
       const el = document.getElementById('adminVolList');
       const ev = eventsCache.find(x => x.id === evId);
+
+      if (!el) return;
 
       if (!evId) {
         el.innerHTML = '<div class="empty-state">Ingen aktivitet vald.</div>';
@@ -1274,12 +1291,13 @@
       const signupHtml = rows.map(s => {
         const btnClass = s.present === true ? 'present' : s.present === false ? 'absent' : '';
         const btnLabel = s.present === true ? 'Här' : s.present === false ? 'Borta' : 'Markera';
-        const pickupInfo = isPickupEvent(ev) && s.selected_pickup_locations.length
-          ? `<div class="tag-list">${s.selected_pickup_locations.map(loc => `<span class="tag">${escapeHtml(loc)}</span>`).join('')}</div>`
+        const selected = Array.isArray(s.selected_pickup_locations) ? s.selected_pickup_locations : (Array.isArray(s.selected_locations) ? s.selected_locations : []);
+        const pickupInfo = isPickupEvent(ev) && selected.length
+          ? `<div class="tag-list">${selected.map(loc => `<span class="tag">${escapeHtml(loc)}</span>`).join('')}</div>`
           : '';
         return `
           <div class="admin-vol-item">
-            <div class="vol-avatar">${escapeHtml(s.name.charAt(0).toUpperCase())}</div>
+            <div class="vol-avatar">${escapeHtml((s.name || '?').charAt(0).toUpperCase())}</div>
             <div class="vol-meta">
               <div style="font-weight:700;">${escapeHtml(s.name)}</div>
               <div style="font-size:11px;color:${s.is_waitlist ? 'var(--orange)' : 'var(--gray)'};">${s.is_waitlist ? 'Reserv' : 'Du har fått plats'}</div>
@@ -1470,29 +1488,38 @@
       const linkWrap = document.getElementById('adminQueueLinkWrap');
       const linkBox = document.getElementById('adminQueueLinkBox');
       const listEl = document.getElementById('adminQueueList');
-      if (!summaryEl || !listEl) return;
+
+      if (!summaryEl || !linkWrap || !linkBox || !listEl) return;
 
       if (!evId) {
-        summaryEl.style.display = 'none';
+        summaryEl.style.display = 'block';
+        summaryEl.innerHTML = '<div class="empty-state">Ingen aktivitet vald.</div>';
         linkWrap.style.display = 'none';
-        listEl.innerHTML = '<div class="empty-state">Välj en aktivitet ovan.</div>';
+        listEl.innerHTML = '<div class="empty-state">Ingen aktivitet vald.</div>';
         return;
       }
 
       const ev = eventsCache.find(e => e.id === evId);
-      const rows = queueEntriesCache.filter(q => q.event_id === evId);
-      const activeRows = rows.filter(q => q.status !== 'left');
-      const waiting = activeRows.filter(q => q.status === 'waiting').length;
-      const assigned = activeRows.filter(q => q.status === 'assigned').length;
-      const left = rows.filter(q => q.status === 'left').length;
+      if (!ev) {
+        summaryEl.style.display = 'block';
+        summaryEl.innerHTML = '<div class="empty-state">Aktiviteten kunde inte hittas.</div>';
+        linkWrap.style.display = 'none';
+        listEl.innerHTML = '<div class="empty-state">Aktiviteten kunde inte hittas.</div>';
+        return;
+      }
+
+      const rows = getQueueEntriesForEvent(evId);
+      const waitingCount = rows.filter(q => q.status === 'waiting').length;
+      const assignedCount = rows.filter(q => q.status === 'assigned').length;
+      const leftCount = rows.filter(q => q.status === 'left').length;
+      const totalCount = rows.length;
 
       summaryEl.style.display = 'block';
       summaryEl.innerHTML = `
-        <div style="font-weight:900;font-size:15px;margin-bottom:6px;">${escapeHtml(ev?.day_name || '')}</div>
-        <div style="font-size:13px;color:var(--gray);line-height:1.6;">
-          ${ev?.queue_open ? 'Kön är öppen' : 'Kön är stängd'} ·
-          ${ev?.queue_assigned ? 'Köplatser utdelade' : 'Köplatser ej utdelade'}<br>
-          Registrerade: ${activeRows.length} · Väntar: ${waiting} · Tilldelade: ${assigned} · Lämnat: ${left}
+        <div style="font-weight:900;margin-bottom:6px;">Digital kö för ${escapeHtml(ev.day_name)} ${escapeHtml(ev.date)}</div>
+        <div style="font-size:13px;color:var(--gray);line-height:1.5;">
+          Status: <strong>${ev.queue_open ? 'Öppen' : 'Stängd'}</strong><br>
+          Totalt: <strong>${totalCount}</strong> · Väntar: <strong>${waitingCount}</strong> · Fått köplats: <strong>${assignedCount}</strong> · Lämnat kön: <strong>${leftCount}</strong>
         </div>
       `;
 
@@ -1500,18 +1527,43 @@
       linkBox.textContent = getQueueEventLink(evId);
 
       if (!rows.length) {
-        listEl.innerHTML = '<div class="empty-state">Ingen har registrerat sig i kön ännu.</div>';
+        listEl.innerHTML = '<div class="empty-state">Ingen står i kön ännu.</div>';
         return;
       }
 
-      const sortedRows = [...rows].sort((a, b) => {
-        const aVal = a.queue_number == null ? 99999 : a.queue_number;
-        const bVal = b.queue_number == null ? 99999 : b.queue_number;
-        if (aVal !== bVal) return aVal - bVal;
+      const sortedRows = rows.slice().sort((a, b) => {
+        const aAssigned = a.queue_number != null ? 0 : 1;
+        const bAssigned = b.queue_number != null ? 0 : 1;
+        if (aAssigned !== bAssigned) return aAssigned - bAssigned;
+
+        const an = a.queue_number ?? 9999;
+        const bn = b.queue_number ?? 9999;
+        if (an !== bn) return an - bn;
         return new Date(a.joined_at) - new Date(b.joined_at);
       });
 
-      listEl.innerHTML = sortedRows.map(q => `
+      const summaryHtml = `
+        <div class="queue-admin-summary">
+          <div class="queue-summary-card">
+            <div class="queue-summary-label">Totalt i kön</div>
+            <div class="queue-summary-value">${totalCount}</div>
+          </div>
+          <div class="queue-summary-card">
+            <div class="queue-summary-label">Väntar</div>
+            <div class="queue-summary-value">${waitingCount}</div>
+          </div>
+          <div class="queue-summary-card">
+            <div class="queue-summary-label">Fått köplats</div>
+            <div class="queue-summary-value">${assignedCount}</div>
+          </div>
+          <div class="queue-summary-card">
+            <div class="queue-summary-label">Lämnat kön</div>
+            <div class="queue-summary-value">${leftCount}</div>
+          </div>
+        </div>
+      `;
+
+      const rowsHtml = sortedRows.map(q => `
         <div class="queue-entry-row ${q.status}">
           <div style="min-width:0;">
             <div style="font-weight:800;font-size:14px;">${escapeHtml(q.display_name || 'Deltagare')}</div>
@@ -1527,6 +1579,9 @@
           </div>
         </div>
       `).join('');
+
+      const noteHtml = '<div class="queue-admin-note">Tips: Om fler kommer sent efter att köplatser redan har delats ut kan du slumpa igen. De sena får då de sista numren i kön.</div>';
+      listEl.innerHTML = summaryHtml + rowsHtml + noteHtml;
     }
 
     async function closeQueue() {
@@ -1828,7 +1883,7 @@
       document.getElementById('adminEventSelect').addEventListener('change', renderSignupList);
       document.getElementById('exportBtn').addEventListener('click', doExport);
       document.getElementById('clearEventBtn').addEventListener('click', doClearEvent);
-      document.getElementById('adminQueueEventSelect').addEventListener('change', () => { renderQueueAdminSummary(); renderQueueAdminList(); });
+      document.getElementById('adminQueueEventSelect').addEventListener('change', renderAdminQueuePanel);
       document.getElementById('cancelBtn').addEventListener('click', doCancel);
       document.getElementById('adminPwInput').addEventListener('keydown', e => {
         if (e.key === 'Enter') doLogin();
