@@ -113,15 +113,15 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1>Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D3 – digital kö</div>
+    <div class="version">Version D4 – digital kö</div>
   </div>
 
   
   <div class="card hidden" id="queueCard">
     <div class="section-label">Digital kö</div>
     <div class="confirm-title" id="queueTitle" style="font-size:20px;margin-bottom:10px;">Registrering</div>
-    <div class="queue-status-box">
-      <div id="queueStatusText" style="font-size:14px;line-height:1.6;color:#6b7280;">Laddar köinformation…</div>
+    <div class="queue-status-box" style="background:#f3f8f4;">
+      <div id="queueStatusText" style="font-size:14px;line-height:1.6;color:#4b5563;font-weight:700;">Laddar köinformation…</div>
       <div id="queueBigNumber" class="queue-big-number hidden">0</div>
     </div>
     <div class="input-group" id="queueNameWrap" style="margin-top:14px;">
@@ -1356,20 +1356,50 @@ async function assignQueueNumbers() {
   ensureAdmin();
   const queueId = document.getElementById('adminQueueSelect')?.value;
   if (!queueId) { alert('Välj en kö först.'); return; }
+
   const waiting = getQueueEntriesForSession(queueId).filter(r => r.status === 'waiting');
   if (!waiting.length) { alert('Det finns inga väntande personer att tilldela.'); return; }
   if (!confirm('Slumpa köplatser för alla som väntar i kön?')) return;
 
-  await api('/rest/v1/rpc/assign_queue_session_numbers', {
-    method: 'POST',
-    headers: getHeaders(true),
-    body: JSON.stringify({
-      p_queue_session_id: queueId
-    })
-  });
+  const existing = getQueueEntriesForSession(queueId).filter(r => r.queue_number != null);
+  const maxExisting = existing.length ? Math.max(...existing.map(r => Number(r.queue_number) || 0)) : 0;
 
-  await reloadAll();
-  renderQueueAdminPanel();
+  const shuffled = waiting.slice();
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  try {
+    await Promise.all(
+      shuffled.map((row, idx) =>
+        api('/rest/v1/queue_entries?id=eq.' + encodeURIComponent(row.id), {
+          method: 'PATCH',
+          headers: getHeaders(true, 'return=minimal'),
+          body: JSON.stringify({
+            queue_number: maxExisting + idx + 1,
+            assigned_at: new Date().toISOString(),
+            status: 'assigned'
+          })
+        })
+      )
+    );
+
+    await api('/rest/v1/queue_sessions?id=eq.' + encodeURIComponent(queueId), {
+      method: 'PATCH',
+      headers: getHeaders(true, 'return=minimal'),
+      body: JSON.stringify({
+        queue_assigned: true,
+        queue_assigned_at: new Date().toISOString()
+      })
+    });
+
+    await reloadAll();
+    renderQueueAdminPanel();
+    alert('Köplatserna har slumpats fram.');
+  } catch (err) {
+    alert('Kunde inte slumpa köplatser: ' + err.message);
+  }
 }
 async function removeQueuePerson(id) {
   ensureAdmin();
@@ -1544,7 +1574,7 @@ function renderQueueView() {
     return;
   }
 
-  status.textContent = 'Du är registrerad. Vänta här tills köplatserna delas ut.';
+  status.textContent = 'Du är registrerad i kön. Vänta här tills köplatserna delas ut.';
   big.classList.add('hidden');
   if (joinBtn) joinBtn.classList.add('hidden');
 }
