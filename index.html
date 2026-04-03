@@ -122,7 +122,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1>Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D10 – digital kö</div>
+    <div class="version">Version D11 – digital kö</div>
   </div>
 
   
@@ -130,9 +130,9 @@
     <div class="section-label">Digital kö</div>
     <div class="helper-box" id="queueHelperBox" style="margin-top:2px;">
       <div class="helper-title" id="queueHelperTitle">Så gör du</div>
-      <div id="queueHelperText">1. Skriv ditt namn om du vill<br>
+      <div id="queueHelperText"><div id="queueHelperText">1. Skriv ditt namn om du vill<br>
       2. Tryck på <strong>Gå med i kön</strong><br>
-      3. Vänta tills du får ett nummer</div>
+      3. Vänta tills du får ett nummer</div></div>
     </div>
     <div class="confirm-title" id="queueTitle" style="font-size:20px;margin-bottom:10px;">Registrering</div>
     <div class="queue-status-box" style="background:#f3f8f4;">
@@ -152,7 +152,7 @@
   <div class="card">
     <div id="mainForm">
       <div class="helper-box">
-        <div class="helper-title">Så gör du</div>
+        <div class="helper-title" id="queueHelperTitle">Så gör du</div>
         1. Fyll i ditt namn<br>
         2. Välj aktivitet<br>
         3. Klicka på knappen längst ner
@@ -1624,6 +1624,10 @@ function renderQueueView() {
   }
 
   if (entry.queue_number != null) {
+    const helperTitleEl = document.getElementById('queueHelperTitle');
+    const helperTextEl = document.getElementById('queueHelperText');
+    if (helperTitleEl) helperTitleEl.textContent = 'Du har fått ett könummer';
+    if (helperTextEl) helperTextEl.innerHTML = 'Du har redan fått ditt könummer. Matutdelningen börjar snart och vi kommer ropa upp ditt nummer, så håll koll och vänta på din tur.';
     status.textContent = 'Du är nummer';
     big.textContent = entry.queue_number;
     big.classList.remove('hidden');
