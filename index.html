@@ -496,13 +496,17 @@ function escapeHtml(v) {
   return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
 function api(path, options = {}) {
+  const withKey = path.includes('?')
+    ? path + '&apikey=' + encodeURIComponent(SUPABASE_ANON_KEY)
+    : path + '?apikey=' + encodeURIComponent(SUPABASE_ANON_KEY);
+
   const baseHeaders = {
     'apikey': SUPABASE_ANON_KEY,
     'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
   };
   const mergedHeaders = { ...baseHeaders, ...(options.headers || {}) };
 
-  return fetch(SUPABASE_URL + path, {
+  return fetch(SUPABASE_URL + withKey, {
     cache: 'no-store',
     ...options,
     headers: mergedHeaders
