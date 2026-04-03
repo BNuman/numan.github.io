@@ -911,6 +911,10 @@ async function addEvent() {
     showCreateError('Ange rubrik och datum.');
     return;
   }
+  if (type === 'hamtning' && !selectedLocations.length) {
+    showCreateError('Välj minst ett hämtställe.');
+    return;
+  }
 
   try {
     isCreatingEvent = true;
@@ -926,7 +930,7 @@ async function addEvent() {
         active: true,
         max_volunteers: 7,
         activity_type: type,
-        allowed_pickup_locations: type === 'hamtning' ? PICKUP_LOCATIONS : [],
+        allowed_pickup_locations: selectedLocations,
         queue_enabled: false,
         queue_open: false,
         queue_assigned: false,
@@ -967,7 +971,7 @@ function renderMgmtList() {
           <div style="flex:1;min-width:0;">
             <div style="font-weight:900;">${escapeHtml(ev.day_name)}</div>
             <div style="font-size:12px;color:#6b7280;">${escapeHtml(fmtDate(ev.date))}</div>
-            <div style="font-size:12px;color:#6b7280;margin-top:4px;">${isPickupEvent(ev) ? 'Hämtning från partner/donatörer' : 'Matutdelning'}${ev.time ? ' · ' + escapeHtml(ev.time) : ''}${ev.location ? ' · ' + escapeHtml(ev.location) : ''}</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:4px;">${isPickupEvent(ev) ? 'Hämtning från partner/donatörer' : 'Matutdelning'}${ev.time ? ' · ' + escapeHtml(ev.time) : ''}${ev.location ? ' · ' + escapeHtml(ev.location) : ''}</div>${isPickupEvent(ev) ? `<div style="font-size:12px;color:#6b7280;margin-top:4px;">${getAllowedPickupLocations(ev).length} valda hämtställen</div>` : ''}
             <div style="font-size:12px;color:#6b7280;margin-top:4px;">${count} anmälda</div>
             ${isPickupEvent(ev) ? '<span class="tag">Hämtning</span>' : '<span class="tag">Matutdelning</span>'}
           </div>
