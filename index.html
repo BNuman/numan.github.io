@@ -127,12 +127,12 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1 id="mainPageTitle">Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D11.4.3 – digital kö</div>
+    <div class="version">Version D11.5.3 – digital kö</div>
   </div>
 
   
   <div class="card hidden" id="queueCard">
-    <div class="section-label" id="queueSectionLabel">Digital kö</div>
+    <div class="section-label hidden" id="queueSectionLabel">Digital kö</div>
     <div class="section-label" id="queueLanguageLabel" style="margin-top:4px;margin-bottom:8px;text-align:center;">Välj språk</div>
     <div class="lang-bar" id="queueLangBar">
       <button class="lang-btn active" type="button" data-lang="sv" onclick="setQueueLanguage('sv')" title="Svenska">🇸🇪</button>
@@ -437,7 +437,7 @@ const QUEUE_I18N = {
     queue_label: 'Digital kö',
     language_label: 'Välj språk',
     page_title: 'Digital kö',
-    page_version: 'Version D11.4 – digital kö',
+    page_version: 'Version D11.5 – digital kö',
     howto_title: 'Så gör du',
     howto_steps: '1. Skriv ditt namn om du vill<br>2. Tryck på <strong>Gå med i kön</strong><br>3. Vänta tills du får ett nummer',
     name_label: 'Ditt namn (valfritt)',
@@ -468,7 +468,7 @@ const QUEUE_I18N = {
     queue_label: 'Digital queue',
     language_label: 'Choose language',
     page_title: 'Digital queue',
-    page_version: 'Version D11.4 – digital queue',
+    page_version: 'Version D11.5 – digital queue',
     howto_title: 'How it works',
     howto_steps: '1. Enter your name if you want<br>2. Press <strong>Join the queue</strong><br>3. Wait until you receive a number',
     name_label: 'Your name (optional)',
@@ -627,6 +627,9 @@ function applyQueueLanguageStatic() {
   const note = document.querySelector('#queueCard .queue-note');
   const pageTitle = document.getElementById('mainPageTitle');
   const pageVersion = document.getElementById('mainPageVersion');
+  const helperTitle = document.getElementById('queueHelperTitle');
+  const helperText = document.getElementById('queueHelperText');
+  const joinBtn = document.getElementById('queueJoinBtn');
 
   if (queueSection) queueSection.textContent = tQueue('queue_label');
   if (languageLabel) languageLabel.textContent = tQueue('language_label');
@@ -637,6 +640,15 @@ function applyQueueLanguageStatic() {
   if (isQueueMode()) {
     if (pageTitle) pageTitle.textContent = tQueue('page_title');
     if (pageVersion) pageVersion.textContent = tQueue('page_version');
+  }
+  if (helperTitle && helperTitle.dataset.state === 'default') helperTitle.textContent = tQueue('howto_title');
+  if (helperText && helperText.dataset.state === 'default') helperText.innerHTML = tQueue('howto_steps');
+  if (joinBtn && !joinBtn.classList.contains('hidden')) {
+    if (joinBtn.disabled) {
+      if (joinBtn.dataset.state === 'closed') joinBtn.textContent = tQueue('queue_soon');
+    } else {
+      joinBtn.textContent = tQueue('join');
+    }
   }
   updateQueueLanguageUI();
 }
