@@ -122,7 +122,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1>Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D11 – digital kö</div>
+    <div class="version">Version D11.1 – digital kö</div>
   </div>
 
   
@@ -1503,6 +1503,7 @@ async function joinQueue() {
   }
   if (isJoiningQueue) return;
 
+  // Stoppa bara dubbla registreringar från samma enhet / samma person som redan gått med på denna mobil.
   const existingLocalEntryId = getQueueEntry(queueId);
   const existingLocalEntry = queueEntriesCache.find(q =>
     q.id === existingLocalEntryId &&
@@ -1510,18 +1511,6 @@ async function joinQueue() {
     q.status !== 'left'
   );
   if (existingLocalEntry) {
-    await reloadAll();
-    return;
-  }
-
-  const normalizedName = (name || 'Deltagare').trim().toLowerCase();
-  const sameNameExisting = queueEntriesCache.find(q =>
-    q.queue_session_id === queueId &&
-    q.status !== 'left' &&
-    String(q.display_name || '').trim().toLowerCase() === normalizedName
-  );
-  if (sameNameExisting) {
-    setQueueEntry(queueId, sameNameExisting.id);
     await reloadAll();
     return;
   }
