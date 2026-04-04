@@ -127,7 +127,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1>Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D11.2.2 – digital kö</div>
+    <div class="version">Version D11.3.3 – digital kö</div>
   </div>
 
   
@@ -433,40 +433,44 @@ let currentQueueLang = localStorage.getItem(QUEUE_LANG_KEY) || 'sv';
 
 const QUEUE_I18N = {
   sv: {
-    howto_title: tQueue('howto_title'),
-    howto_steps: tQueue('howto_steps'),
-    queue_label: tQueue('queue_label'),
+    queue_label: 'Digital kö',
+    howto_title: 'Så gör du',
+    howto_steps: '1. Skriv ditt namn om du vill<br>2. Tryck på <strong>Gå med i kön</strong><br>3. Vänta tills du får ett nummer',
     name_label: 'Ditt namn (valfritt)',
     name_placeholder: 'Skriv ditt namn om du vill',
-    join: tQueue('join'),
-    queue_soon: tQueue('queue_soon'),
+    join: 'Gå med i kön',
+    queue_soon: 'Kön öppnar snart',
     leave: 'Lämna kön',
-    wait_msg: tQueue('wait_msg'),
-    closed_msg: tQueue('closed_msg'),
-    already_title: tQueue('already_title'),
-    already_text: tQueue('already_text'),
-    got_number_title: tQueue('got_number_title'),
-    got_number_text: tQueue('got_number_text'),
-    left_title: tQueue('left_title'),
-    left_text: tQueue('left_text'),
-    not_found: tQueue('not_found'),
+    not_found: 'Kön kunde inte hittas.',
     no_open_title: 'Ingen öppen kö just nu',
     no_open_text: 'Vänta tills personalen öppnar kön. När kön är öppen kan du använda samma QR-kod igen.',
     no_open_status: 'Det finns ingen öppen kö just nu.',
-    queue_number: tQueue('queue_number'),
-    waiting_status: tQueue('waiting_status'),
-    left_status: tQueue('left_status'),
+    wait_msg: 'Tryck på knappen nedan för att gå med i kön.',
+    closed_msg: 'Kön är stängd just nu. Registrering öppnar när personalen öppnar kön.',
+    already_title: 'Du står i kön',
+    already_text: 'Du står i kön nu. Vi ger dig ett nummer snart. Du behöver inte trycka igen.',
+    got_number_title: 'Du har fått ett könummer',
+    got_number_text: 'Du har redan fått ditt könummer. Matutdelningen börjar snart och vi kommer ropa upp ditt nummer, så håll koll och vänta på din tur.',
+    left_title: 'Du har lämnat kön',
+    left_text: 'Du står inte längre i kön. Om du behöver en ny plats kan personalen hjälpa dig.',
+    waiting_status: 'Du är registrerad i kön. Vi ger dig ett nummer snart.',
+    queue_number: 'Du är nummer',
+    left_status: 'Du har lämnat kön.',
     note: 'Du behåller din plats i kön även om du väntar här. Du behöver inte trycka igen.'
   },
   en: {
+    queue_label: 'Digital queue',
     howto_title: 'How it works',
     howto_steps: '1. Enter your name if you want<br>2. Press <strong>Join the queue</strong><br>3. Wait until you receive a number',
-    queue_label: 'Digital queue',
     name_label: 'Your name (optional)',
     name_placeholder: 'Enter your name if you want',
     join: 'Join the queue',
     queue_soon: 'Queue opens soon',
     leave: 'Leave the queue',
+    not_found: 'The queue could not be found.',
+    no_open_title: 'No open queue right now',
+    no_open_text: 'Please wait until the staff opens the queue. When the queue is open, you can use the same QR code again.',
+    no_open_status: 'There is no open queue right now.',
     wait_msg: 'Press the button below to join the queue.',
     closed_msg: 'The queue is closed right now. Registration opens when the staff opens the queue.',
     already_title: 'You are in the queue',
@@ -475,24 +479,24 @@ const QUEUE_I18N = {
     got_number_text: 'You already have your queue number. Food distribution starts soon and we will call your number, so please stay alert and wait for your turn.',
     left_title: 'You have left the queue',
     left_text: 'You are no longer in the queue. If you need a new place, the staff can help you.',
-    not_found: 'The queue could not be found.',
-    no_open_title: 'No open queue right now',
-    no_open_text: 'Please wait until the staff opens the queue. When the queue is open, you can use the same QR code again.',
-    no_open_status: 'There is no open queue right now.',
-    queue_number: 'Your number is',
     waiting_status: 'You are registered in the queue. We will give you a number soon.',
+    queue_number: 'Your number is',
     left_status: 'You have left the queue.',
     note: 'You keep your place in the queue while waiting here. You do not need to press again.'
   },
   es: {
+    queue_label: 'Fila digital',
     howto_title: 'Cómo funciona',
     howto_steps: '1. Escribe tu nombre si quieres<br>2. Pulsa <strong>Unirme a la fila</strong><br>3. Espera hasta recibir un número',
-    queue_label: 'Fila digital',
     name_label: 'Tu nombre (opcional)',
     name_placeholder: 'Escribe tu nombre si quieres',
     join: 'Unirme a la fila',
     queue_soon: 'La fila abre pronto',
     leave: 'Salir de la fila',
+    not_found: 'No se pudo encontrar la fila.',
+    no_open_title: 'No hay una fila abierta ahora mismo',
+    no_open_text: 'Espera hasta que el personal abra la fila. Cuando la fila esté abierta, puedes usar el mismo código QR de nuevo.',
+    no_open_status: 'No hay una fila abierta ahora mismo.',
     wait_msg: 'Pulsa el botón de abajo para unirte a la fila.',
     closed_msg: 'La fila está cerrada ahora mismo. El registro se abre cuando el personal abre la fila.',
     already_title: 'Ya estás en la fila',
@@ -501,24 +505,24 @@ const QUEUE_I18N = {
     got_number_text: 'Ya tienes tu número de fila. La distribución de comida empezará pronto y llamaremos tu número, así que mantente atento y espera tu turno.',
     left_title: 'Has salido de la fila',
     left_text: 'Ya no estás en la fila. Si necesitas un nuevo lugar, el personal puede ayudarte.',
-    not_found: 'No se pudo encontrar la fila.',
-    no_open_title: 'No hay una fila abierta ahora mismo',
-    no_open_text: 'Espera hasta que el personal abra la fila. Cuando la fila esté abierta, puedes usar el mismo código QR de nuevo.',
-    no_open_status: 'No hay una fila abierta ahora mismo.',
-    queue_number: 'Tu número es',
     waiting_status: 'Estás registrado en la fila. Pronto te daremos un número.',
+    queue_number: 'Tu número es',
     left_status: 'Has salido de la fila.',
     note: 'Conservas tu lugar en la fila mientras esperas aquí. No necesitas pulsar otra vez.'
   },
   ar: {
+    queue_label: 'الطابور الرقمي',
     howto_title: 'كيف يعمل',
     howto_steps: '1. اكتب اسمك إذا أردت<br>2. اضغط <strong>انضم إلى الطابور</strong><br>3. انتظر حتى تحصل على رقم',
-    queue_label: 'الطابور الرقمي',
     name_label: 'اسمك (اختياري)',
     name_placeholder: 'اكتب اسمك إذا أردت',
     join: 'انضم إلى الطابور',
     queue_soon: 'سيفتح الطابور قريباً',
     leave: 'غادر الطابور',
+    not_found: 'تعذر العثور على الطابور.',
+    no_open_title: 'لا يوجد طابور مفتوح الآن',
+    no_open_text: 'يرجى الانتظار حتى يفتح الموظفون الطابور. عندما يفتح الطابور، يمكنك استخدام نفس رمز QR مرة أخرى.',
+    no_open_status: 'لا يوجد طابور مفتوح الآن.',
     wait_msg: 'اضغط الزر أدناه للانضمام إلى الطابور.',
     closed_msg: 'الطابور مغلق الآن. يفتح التسجيل عندما يفتح الموظفون الطابور.',
     already_title: 'أنت في الطابور',
@@ -527,24 +531,24 @@ const QUEUE_I18N = {
     got_number_text: 'لديك رقمك بالفعل. سيبدأ توزيع الطعام قريباً وسننادي رقمك، لذا انتبه وانتظر دورك.',
     left_title: 'لقد غادرت الطابور',
     left_text: 'لم تعد في الطابور. إذا كنت بحاجة إلى مكان جديد، يمكن للموظفين مساعدتك.',
-    not_found: 'تعذر العثور على الطابور.',
-    no_open_title: 'لا يوجد طابور مفتوح الآن',
-    no_open_text: 'يرجى الانتظار حتى يفتح الموظفون الطابور. عندما يفتح الطابور، يمكنك استخدام نفس رمز QR مرة أخرى.',
-    no_open_status: 'لا يوجد طابور مفتوح الآن.',
-    queue_number: 'رقمك هو',
     waiting_status: 'تم تسجيلك في الطابور. سنعطيك رقماً قريباً.',
+    queue_number: 'رقمك هو',
     left_status: 'لقد غادرت الطابور.',
     note: 'ستحتفظ بمكانك في الطابور أثناء انتظارك هنا. لا تحتاج إلى الضغط مرة أخرى.'
   },
   uk: {
+    queue_label: 'Цифрова черга',
     howto_title: 'Як це працює',
     howto_steps: '1. Введіть своє ім’я, якщо хочете<br>2. Натисніть <strong>Приєднатися до черги</strong><br>3. Зачекайте, поки отримаєте номер',
-    queue_label: 'Цифрова черга',
     name_label: 'Ваше ім’я (необов’язково)',
     name_placeholder: 'Введіть своє ім’я, якщо хочете',
     join: 'Приєднатися до черги',
     queue_soon: 'Черга скоро відкриється',
     leave: 'Вийти з черги',
+    not_found: 'Чергу не знайдено.',
+    no_open_title: 'Зараз немає відкритої черги',
+    no_open_text: 'Будь ласка, зачекайте, поки персонал відкриє чергу. Коли черга відкриється, ви зможете знову скористатися тим самим QR-кодом.',
+    no_open_status: 'Зараз немає відкритої черги.',
     wait_msg: 'Натисніть кнопку нижче, щоб приєднатися до черги.',
     closed_msg: 'Черга зараз закрита. Реєстрація відкриється, коли персонал відкриє чергу.',
     already_title: 'Ви в черзі',
@@ -553,12 +557,8 @@ const QUEUE_I18N = {
     got_number_text: 'У вас уже є номер черги. Роздача їжі скоро почнеться, і ми оголосимо ваш номер, тож, будь ласка, стежте та чекайте своєї черги.',
     left_title: 'Ви вийшли з черги',
     left_text: 'Ви більше не в черзі. Якщо вам потрібне нове місце, персонал може допомогти.',
-    not_found: 'Чергу не знайдено.',
-    no_open_title: 'Зараз немає відкритої черги',
-    no_open_text: 'Будь ласка, зачекайте, поки персонал відкриє чергу. Коли черга відкриється, ви зможете знову скористатися тим самим QR-кодом.',
-    no_open_status: 'Зараз немає відкритої черги.',
-    queue_number: 'Ваш номер',
     waiting_status: 'Вас зареєстровано в черзі. Незабаром ми дамо вам номер.',
+    queue_number: 'Ваш номер',
     left_status: 'Ви вийшли з черги.',
     note: 'Ви зберігаєте своє місце в черзі, поки чекаєте тут. Не потрібно натискати ще раз.'
   }
@@ -579,27 +579,19 @@ function applyQueueLanguageStatic() {
   const nameInput = document.getElementById('queueNameInput');
   const leaveBtn = document.getElementById('queueLeaveBtn');
   const note = document.querySelector('#queueCard .queue-note');
-  const joinBtn = document.getElementById('queueJoinBtn');
 
   if (queueSection) queueSection.textContent = tQueue('queue_label');
   if (nameLabel) nameLabel.textContent = tQueue('name_label');
   if (nameInput) nameInput.placeholder = tQueue('name_placeholder');
   if (leaveBtn) leaveBtn.textContent = tQueue('leave');
   if (note) note.textContent = tQueue('note');
-
-  // join button text is also set by renderQueueView based on state; set a default here
-  if (joinBtn && !joinBtn.classList.contains('hidden') && !joinBtn.disabled) {
-    joinBtn.textContent = tQueue('join');
-  }
   updateQueueLanguageUI();
 }
 function setQueueLanguage(lang) {
   currentQueueLang = QUEUE_I18N[lang] ? lang : 'sv';
   localStorage.setItem(QUEUE_LANG_KEY, currentQueueLang);
   applyQueueLanguageStatic();
-  if (typeof renderQueueView === 'function' && isQueueMode()) {
-    renderQueueView();
-  }
+  if (typeof renderQueueView === 'function' && isQueueMode()) renderQueueView();
 }
 
 function escapeHtml(v) {
@@ -1681,7 +1673,7 @@ async function joinQueue() {
   const name = document.getElementById('queueNameInput')?.value?.trim() || '';
 
   if (!session) {
-    statusEl.textContent = tQueue('not_found');
+    statusEl.textContent = 'Kön kunde inte hittas.';
     statusEl.className = 'status-msg show err';
     return;
   }
@@ -1781,11 +1773,11 @@ function renderQueueView() {
     if (joinBtn) {
       joinBtn.classList.remove('hidden');
       joinBtn.disabled = !session.queue_open;
-      joinBtn.textContent = session.queue_open ? tQueue('join') : tQueue('queue_soon');
+      joinBtn.textContent = session.queue_open ? 'Gå med i kön' : 'Kön öppnar snart';
     }
     status.textContent = session.queue_open
       ? 'Tryck nedan för att ställa dig i kön.'
-      : tQueue('closed_msg');
+      : 'Kön är stängd just nu. Registrering öppnar när personalen öppnar kön.';
     return;
   }
 
@@ -1803,8 +1795,8 @@ function renderQueueView() {
   if (entry.queue_number != null) {
     const helperTitleEl = document.getElementById('queueHelperTitle');
     const helperTextEl = document.getElementById('queueHelperText');
-    if (helperTitleEl) helperTitleEl.textContent = tQueue('got_number_title');
-    if (helperTextEl) helperTextEl.innerHTML = tQueue('got_number_text');
+    if (helperTitleEl) helperTitleEl.textContent = 'Du har fått ett könummer';
+    if (helperTextEl) helperTextEl.innerHTML = 'Du har redan fått ditt könummer. Matutdelningen börjar snart och vi kommer ropa upp ditt nummer, så håll koll och vänta på din tur.';
     status.textContent = tQueue('queue_number');
     big.textContent = entry.queue_number;
     big.classList.remove('hidden');
