@@ -122,7 +122,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1>Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D15 – digital kö</div>
+    <div class="version">Version D11 – digital kö</div>
   </div>
 
   
@@ -290,16 +290,6 @@
         <div id="queueLinkWrap" class="hidden" style="margin-top:12px;">
           <div class="section-label">QR-länk att använda</div>
           <div class="queue-link-box" id="queueLinkBox"></div>
-          <div class="link-action-row">
-            <button class="link-btn" type="button" onclick="openDirectQueueLink()">Öppna länk</button>
-            <button class="link-btn" type="button" onclick="copyDirectQueueLink()">Kopiera länk</button>
-          </div>
-          <div class="section-label" style="margin-top:12px;">Fast QR-länk för alla matutdelningar</div>
-          <div class="queue-link-box" id="queueSmartLinkBox"></div>
-          <div class="link-action-row">
-            <button class="link-btn" type="button" onclick="openSmartQueueLink()">Öppna fast QR-länk</button>
-            <button class="link-btn" type="button" onclick="copySmartQueueLink()">Kopiera fast QR-länk</button>
-          </div>
         </div>
         <div class="admin-actions">
           <button class="mini-btn active" type="button" onclick="openQueue()">Öppna kö</button>
@@ -338,8 +328,6 @@ let queueSessionsCache = [];
 let queueEntriesCache = [];
 let isCreatingQueue = false;
 let isJoiningQueue = false;
-let currentDirectQueueLink = '';
-let currentSmartQueueLink = '';
 let queuePollTimer = null;
 let adminQueuePollTimer = null;
 let isCreatingEvent = false;
@@ -361,34 +349,7 @@ function getQueueIdFromUrl() {
 }
 function isQueueMode() {
   const p = new URLSearchParams(window.location.search);
-  return p.get('queue') === '1' || !!p.get('queueId') || p.get('queue') === 'smart';
-}
-function isSmartQueueMode() {
-  const p = new URLSearchParams(window.location.search);
-  return p.get('queue') === 'smart';
-}
-async function resolveSmartQueue() {
-  await loadQueueSessions();
-  const today = new Date().toISOString().slice(0, 10);
-
-  const openQueues = queueSessionsCache
-    .filter(q => q.active !== false && q.queue_open === true)
-    .slice()
-    .sort((a, b) => {
-      const aToday = String(a.date || '') === today ? 0 : 1;
-      const bToday = String(b.date || '') === today ? 0 : 1;
-      if (aToday !== bToday) return aToday - bToday;
-
-      const ad = String(a.date || '');
-      const bd = String(b.date || '');
-      if (ad !== bd) return bd.localeCompare(ad);
-
-      const at = String(a.queue_assigned_at || a.created_at || '');
-      const bt = String(b.queue_assigned_at || b.created_at || '');
-      return bt.localeCompare(at);
-    });
-
-  return openQueues.length ? openQueues[0] : null;
+  return p.get('queue') === '1' || !!p.get('queueId');
 }
 function getQueueMap() {
   try { return JSON.parse(localStorage.getItem(QUEUE_ENTRY_KEY) || '{}'); } catch(e) { return {}; }
@@ -406,31 +367,6 @@ function removeQueueEntry(queueId) {
   delete map[queueId];
   localStorage.setItem(QUEUE_ENTRY_KEY, JSON.stringify(map));
 }
-async function copyTextSafe(text, successMessage) {
-  try {
-    await navigator.clipboard.writeText(text);
-    alert(successMessage);
-  } catch (e) {
-    prompt('Kopiera länken manuellt:', text);
-  }
-}
-function openDirectQueueLink() {
-  if (!currentDirectQueueLink) { alert('Ingen kölänk tillgänglig.'); return; }
-  window.open(currentDirectQueueLink, '_blank', 'noopener,noreferrer');
-}
-function openSmartQueueLink() {
-  if (!currentSmartQueueLink) { alert('Ingen fast QR-länk tillgänglig.'); return; }
-  window.open(currentSmartQueueLink, '_blank', 'noopener,noreferrer');
-}
-function copyDirectQueueLink() {
-  if (!currentDirectQueueLink) { alert('Ingen kölänk tillgänglig.'); return; }
-  copyTextSafe(currentDirectQueueLink, 'Kölänken är kopierad.');
-}
-function copySmartQueueLink() {
-  if (!currentSmartQueueLink) { alert('Ingen fast QR-länk tillgänglig.'); return; }
-  copyTextSafe(currentSmartQueueLink, 'Den fasta QR-länken är kopierad.');
-}
-
 function getQueueLink(queueId) {
   return window.location.origin + window.location.pathname + '?queue=1&queueId=' + encodeURIComponent(queueId);
 }
@@ -1398,17 +1334,7 @@ function renderQueueAdminPanel() {
     </div>
   `;
   linkWrap.classList.remove('hidden');
-  const directUrl = getQueueLink(queueId);
-  currentDirectQueueLink = directUrl;
-  linkBox.innerHTML = '<a href="' + directUrl + '" target="_blank" rel="noopener noreferrer">' + directUrl + '</a>';
-  const smartUrl = window.location.origin + window.location.pathname + '?queue=smart';
-  currentSmartQueueLink = smartUrl;
-  const smartBox = document.getElementById('queueSmartLinkBox');
-  if (smartBox) {
-    smartBox.innerHTML = '<a href="' + smartUrl + '" target="_blank" rel="noopener noreferrer">' + smartUrl + '</a>';
-  }
-  const smartBox = document.getElementById('queueSmartLinkBox');
-  if (smartBox) smartBox.textContent = window.location.origin + window.location.pathname + '?queue=smart';
+  linkBox.textContent = getQueueLink(queueId);
 
   if (!rows.length) {
     list.innerHTML = '<div class="empty-state">Ingen står i kön ännu.</div>';
@@ -1753,58 +1679,19 @@ async function resetQueueAssignments() {
 
 async function init() {
   try {
-    if (isSmartQueueMode()) {
-      const smartQueue = await resolveSmartQueue();
-
-      const mainCard = document.querySelector('.card:not(#queueCard)');
-      if (mainCard) mainCard.classList.add('hidden');
-      document.querySelectorAll('.admin-row').forEach(x => x.classList.add('hidden'));
-      const adminPanel = document.getElementById('adminPanel');
-      if (adminPanel) adminPanel.classList.add('hidden');
-      const queueCard = document.getElementById('queueCard');
-      if (queueCard) queueCard.classList.remove('hidden');
-
-      const title = document.getElementById('queueTitle');
-      const status = document.getElementById('queueStatusText');
-      const big = document.getElementById('queueBigNumber');
-      const nameWrap = document.getElementById('queueNameWrap');
-      const joinBtn = document.getElementById('queueJoinBtn');
-      const leaveBtn = document.getElementById('queueLeaveBtn');
-      const helperTitle = document.getElementById('queueHelperTitle');
-      const helperText = document.getElementById('queueHelperText');
-
-      if (big) big.classList.add('hidden');
-      if (leaveBtn) leaveBtn.classList.add('hidden');
-
-      if (!smartQueue) {
-        if (title) title.textContent = 'Digital kö';
-        if (helperTitle) helperTitle.textContent = 'Ingen öppen kö just nu';
-        if (helperText) helperText.innerHTML = 'Vänta tills personalen öppnar kön. När kön är öppen kan du använda samma QR-kod igen.';
-        if (status) status.textContent = 'Det finns ingen öppen kö just nu.';
-        if (nameWrap) nameWrap.classList.add('hidden');
-        if (joinBtn) joinBtn.classList.add('hidden');
-        return;
-      }
-
-      const url = new URL(window.location.href);
-      url.searchParams.set('queue', '1');
-      url.searchParams.set('queueId', smartQueue.id);
-      window.location.replace(url.toString());
-      return;
-    }
-
     await reloadAll();
     restoreVolunteerName();
     refreshSignupButton();
     restoreAdminSession();
-    if (isQueueMode()) renderQueueView();
-  } catch (err) {
-    const eventsEl = document.getElementById('eventsList');
-    if (eventsEl) {
-      eventsEl.innerHTML = '<div class="empty-state">Kunde inte ladda data.<br>' + escapeHtml(err.message) + '</div>';
+    if (isQueueMode()) {
+      renderQueueView();
+      startQueuePolling();
     } else {
-      document.body.innerHTML = '<div style="font-family:sans-serif;padding:30px;text-align:center;">Kunde inte ladda sidan.<br>' + escapeHtml(err.message) + '</div>';
+      stopQueuePolling();
     }
+    renderCreatePickupOptions();
+  } catch (err) {
+    document.getElementById('eventsList').innerHTML = '<div class="empty-state">Kunde inte ladda data.<br>' + escapeHtml(err.message) + '</div>';
   }
 }
 init();
