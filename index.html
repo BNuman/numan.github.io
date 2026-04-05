@@ -183,6 +183,7 @@
       <input type="text" id="queueNameInput" placeholder="Skriv ditt namn om du vill" maxlength="50">
     </div>
     <div class="queue-note">Du behåller din plats i kön även om du väntar här. Du behöver inte trycka igen.</div>
+    <div id="queueTurnNotice" class="status-msg" style="font-weight:900;color:#2E7D4F;"></div>
     <div id="queuePublicStatus" class="status-msg"></div>
     <button class="submit-btn" type="button" id="queueJoinBtn" onclick="joinQueue()">Gå med i kön</button>
     <button class="submit-btn hidden" type="button" id="queueLeaveBtn" onclick="leaveQueue()" style="margin-top:10px;">Lämna kön</button>
@@ -504,6 +505,7 @@ function startQueuePolling() {
       await loadQueueSessions();
       await loadQueueEntries();
       renderQueueView();
+  if (entry) updateUserTurnNotification(entry);
     } catch (e) {
       console.error('Queue polling error', e);
     }
@@ -571,6 +573,8 @@ const QUEUE_I18N = {
     pickup: 'Hämtning',
     current_call_title: 'Aktuellt upprop',
     current_call_none: 'Inget nummer ropas upp just nu.',
+    turn_now: 'Nu är det din tur',
+    turn_soon: 'Det är snart din tur',
     current_call_prefix: 'Vi ropar upp nummer'
   },
   en: {
@@ -605,6 +609,8 @@ const QUEUE_I18N = {
     pickup: 'Collection',
     current_call_title: 'Current call',
     current_call_none: 'No number is being called right now.',
+    turn_now: 'Nu är det din tur',
+    turn_soon: 'Det är snart din tur',
     current_call_prefix: 'We are calling number'
   },
   es: {
@@ -639,6 +645,8 @@ const QUEUE_I18N = {
     pickup: 'Recogida',
     current_call_title: 'Llamando ahora',
     current_call_none: 'No se está llamando a ningún número ahora mismo.',
+    turn_now: 'Nu är det din tur',
+    turn_soon: 'Det är snart din tur',
     current_call_prefix: 'Estamos llamando al número'
   },
   ar: {
@@ -673,6 +681,8 @@ const QUEUE_I18N = {
     pickup: 'الاستلام',
     current_call_title: 'النداء الحالي',
     current_call_none: 'لا يتم نداء أي رقم الآن.',
+    turn_now: 'Nu är det din tur',
+    turn_soon: 'Det är snart din tur',
     current_call_prefix: 'نحن ننادي الرقم'
   },
   uk: {
@@ -707,6 +717,8 @@ const QUEUE_I18N = {
     pickup: 'Отримання',
     current_call_title: 'Поточний виклик',
     current_call_none: 'Зараз не викликають жодного номера.',
+    turn_now: 'Nu är det din tur',
+    turn_soon: 'Det är snart din tur',
     current_call_prefix: 'Зараз викликають номер'
   }
 };
@@ -822,6 +834,7 @@ function setQueueLanguage(lang) {
   localStorage.setItem(QUEUE_LANG_KEY, currentQueueLang);
   applyQueueLanguageStatic();
   if (typeof renderQueueView === 'function' && isQueueMode()) renderQueueView();
+  if (entry) updateUserTurnNotification(entry);
 }
 
 
@@ -1090,6 +1103,7 @@ async function reloadAll() {
     }
   }
   if (isQueueMode()) renderQueueView();
+  if (entry) updateUserTurnNotification(entry);
 }
 
 function renderPublicEvents() {
@@ -2266,6 +2280,7 @@ async function init() {
     updateCurrentNumberDisplay();
     if (isQueueMode()) {
       renderQueueView();
+  if (entry) updateUserTurnNotification(entry);
       startQueuePolling();
     } else {
       stopQueuePolling();
@@ -2276,6 +2291,29 @@ async function init() {
   }
 }
 init();
+
+function updateUserTurnNotification(entry) {
+  const noticeEl = document.getElementById('queueTurnNotice');
+  if (!noticeEl || !entry || !entry.queue_number) return;
+
+  const queueId = getQueueIdFromUrl();
+  const current = getCurrentQueueNumber(queueId);
+  if (!current) {
+    noticeEl.textContent = '';
+    return;
+  }
+
+  const diff = entry.queue_number - Number(current);
+
+  if (diff === 0) {
+    noticeEl.textContent = tQueue('turn_now') + '!';
+  } else if (diff > 0 && diff <= 3) {
+    noticeEl.textContent = tQueue('turn_soon');
+  } else {
+    noticeEl.textContent = '';
+  }
+}
+
 </script>
 </body>
 </html>
