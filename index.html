@@ -148,7 +148,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1 id="mainPageTitle">Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D11.18 – digital kö</div>
+    <div class="version">Version D11.20 – digital kö</div>
   </div>
 
   
@@ -505,7 +505,6 @@ function startQueuePolling() {
       await loadQueueSessions();
       await loadQueueEntries();
       renderQueueView();
-  if (entry) updateUserTurnNotification(entry);
     } catch (e) {
       console.error('Queue polling error', e);
     }
@@ -545,7 +544,7 @@ const QUEUE_I18N = {
     queue_label: 'Digital kö',
     language_label: 'Välj språk',
     page_title: 'Digital kö',
-    page_version: 'Version D11.18 – digital kö',
+    page_version: 'Version D11.20 – digital kö',
     howto_title: 'Så gör du',
     howto_steps: '1. Skriv ditt namn om du vill<br>2. Tryck på <strong>Gå med i kön</strong><br>3. Vänta tills du får ett nummer',
     name_label: 'Ditt namn (valfritt)',
@@ -834,7 +833,6 @@ function setQueueLanguage(lang) {
   localStorage.setItem(QUEUE_LANG_KEY, currentQueueLang);
   applyQueueLanguageStatic();
   if (typeof renderQueueView === 'function' && isQueueMode()) renderQueueView();
-  if (entry) updateUserTurnNotification(entry);
 }
 
 
@@ -1103,7 +1101,6 @@ async function reloadAll() {
     }
   }
   if (isQueueMode()) renderQueueView();
-  if (entry) updateUserTurnNotification(entry);
 }
 
 function renderPublicEvents() {
@@ -2157,6 +2154,8 @@ function renderQueueView() {
   const entryId = getQueueEntry(queueId);
   const entry = queueEntriesCache.find(q => q.id === entryId && q.queue_session_id === queueId);
 
+  updateUserTurnNotification(entry);
+
   document.querySelector('.card:not(#queueCard)').classList.add('hidden');
   document.querySelectorAll('.admin-row').forEach(x => x.classList.add('hidden'));
   document.getElementById('adminPanel').classList.add('hidden');
@@ -2280,7 +2279,6 @@ async function init() {
     updateCurrentNumberDisplay();
     if (isQueueMode()) {
       renderQueueView();
-  if (entry) updateUserTurnNotification(entry);
       startQueuePolling();
     } else {
       stopQueuePolling();
