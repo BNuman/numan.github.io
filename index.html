@@ -133,7 +133,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1 id="mainPageTitle">Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D11.10.9.3 – digital kö</div>
+    <div class="version">Version D11.11.9.3 – digital kö</div>
   </div>
 
   
@@ -312,6 +312,7 @@
           <div class="current-number-sub" id="currentNumberSub">Sätt vilket nummer ni ropar upp just nu.</div>
           <div class="current-number-actions">
             <button class="mini-btn active" type="button" onclick="setCurrentQueueNumber()">Sätt aktuellt nummer</button>
+            <button class="mini-btn active" type="button" onclick="assignNumbersToLate()">Ge nummer till sena</button>
             <button class="mini-btn active" type="button" onclick="callNextNumber()">Ropa nästa nummer</button>
             <button class="mini-btn" type="button" onclick="clearCurrentQueueNumber()">Rensa aktuellt nummer</button>
           </div>
@@ -481,7 +482,7 @@ const QUEUE_I18N = {
     queue_label: 'Digital kö',
     language_label: 'Välj språk',
     page_title: 'Digital kö',
-    page_version: 'Version D11.10.9 – digital kö',
+    page_version: 'Version D11.11.9 – digital kö',
     howto_title: 'Så gör du',
     howto_steps: '1. Skriv ditt namn om du vill<br>2. Tryck på <strong>Gå med i kön</strong><br>3. Vänta tills du får ett nummer',
     name_label: 'Ditt namn (valfritt)',
@@ -512,7 +513,7 @@ const QUEUE_I18N = {
     queue_label: 'Digital queue',
     language_label: 'Choose language',
     page_title: 'Digital queue',
-    page_version: 'Version D11.10.9 – digital queue',
+    page_version: 'Version D11.11.9 – digital queue',
     howto_title: 'How it works',
     howto_steps: '1. Enter your name if you want<br>2. Press <strong>Join the queue</strong><br>3. Wait until you receive a number',
     name_label: 'Your name (optional)',
@@ -815,6 +816,41 @@ function callNextNumber() {
 
   localStorage.setItem(getCurrentQueueNumberKey(queueId), String(nextNumber));
   renderQueueAdminPanel();
+}
+
+function assignNumbersToLate() {
+  const queueId = document.getElementById('adminQueueSelect')?.value;
+  if (!queueId) { alert('Välj en kö först.'); return; }
+
+  const rows = getQueueEntriesForSession(queueId);
+
+  const assigned = rows
+    .filter(r => r.status === 'assigned' && r.queue_number != null)
+    .map(r => Number(r.queue_number));
+
+  const max = assigned.length ? Math.max(...assigned) : 0;
+
+  const late = rows
+    .filter(r => (r.status === 'waiting' || r.status === 'registered') && (r.queue_number == null));
+
+  if (!late.length) {
+    alert('Inga sena att tilldela nummer.');
+    return;
+  }
+
+  let next = max + 1;
+
+  late.forEach(r => {
+    r.queue_number = next++;
+    r.status = 'assigned';
+  });
+
+  // persist via existing API if available, else refresh UI
+  if (typeof saveQueueEntries === 'function') {
+    saveQueueEntries(queueId, late).then(() => renderQueueAdminPanel());
+  } else {
+    renderQueueAdminPanel();
+  }
 }
 
 function escapeHtml(v) {
