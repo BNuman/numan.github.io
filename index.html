@@ -148,7 +148,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1 id="mainPageTitle">Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D11.18.9.3 – digital kö</div>
+    <div class="version">Version D11.17.9.3 – digital kö</div>
   </div>
 
   
@@ -173,7 +173,7 @@
       <div id="queueStatusText" style="font-size:14px;line-height:1.6;color:#4b5563;font-weight:700;">Laddar köinformation…</div>
       <div id="queueBigNumber" class="queue-big-number hidden">0</div>
     </div>
-    <div class="called-number-box" id="calledNumberBox" style="display:block;">
+    <div class="called-number-box" id="calledNumberBox" style="display:block;border-color:#2E7D4F;background:#eef8f1;">
       <div class="called-number-title" id="calledNumberTitle">Aktuellt upprop</div>
       <div class="called-number-value" id="calledNumberValue">-</div>
       <div class="called-number-sub" id="calledNumberSub">Inget nummer ropas upp just nu.</div>
@@ -440,32 +440,48 @@ function removeQueueEntry(queueId) {
   localStorage.setItem(QUEUE_ENTRY_KEY, JSON.stringify(map));
 }
 
-function getCurrentQueueNumberKey(queueId) {
-  return 'hf_current_queue_number_' + queueId;
-}
 function getCurrentQueueNumber(queueId) {
   if (!queueId) return '';
-  return localStorage.getItem(getCurrentQueueNumberKey(queueId)) || '';
+  const session = queueSessionsCache.find(q => q.id === queueId);
+  return session?.current_called_number != null ? String(session.current_called_number) : '';
 }
-function setCurrentQueueNumber() {
+async function setCurrentQueueNumber() {
   const queueId = document.getElementById('adminQueueSelect')?.value;
   if (!queueId) { alert('Välj en kö först.'); return; }
   const current = getCurrentQueueNumber(queueId);
   const num = prompt('Vilket nummer ropar ni upp just nu?', current || '');
   if (num === null) return;
   const clean = String(num).trim();
-  if (!clean) {
-    localStorage.removeItem(getCurrentQueueNumberKey(queueId));
-  } else {
-    localStorage.setItem(getCurrentQueueNumberKey(queueId), clean);
+  if (clean && !/^\d+$/.test(clean)) {
+    alert('Ange bara ett nummer.');
+    return;
   }
-  renderQueueAdminPanel();
+  try {
+    await api('/rest/v1/queue_sessions?id=eq.' + encodeURIComponent(queueId), {
+      method: 'PATCH',
+      headers: getHeaders(true, 'return=minimal'),
+      body: JSON.stringify({ current_called_number: clean ? Number(clean) : null })
+    });
+    await reloadAll();
+    renderQueueAdminPanel();
+  } catch (err) {
+    alert('Kunde inte sätta aktuellt nummer: ' + err.message);
+  }
 }
-function clearCurrentQueueNumber() {
+async function clearCurrentQueueNumber() {
   const queueId = document.getElementById('adminQueueSelect')?.value;
   if (!queueId) { alert('Välj en kö först.'); return; }
-  localStorage.removeItem(getCurrentQueueNumberKey(queueId));
-  renderQueueAdminPanel();
+  try {
+    await api('/rest/v1/queue_sessions?id=eq.' + encodeURIComponent(queueId), {
+      method: 'PATCH',
+      headers: getHeaders(true, 'return=minimal'),
+      body: JSON.stringify({ current_called_number: null })
+    });
+    await reloadAll();
+    renderQueueAdminPanel();
+  } catch (err) {
+    alert('Kunde inte rensa aktuellt nummer: ' + err.message);
+  }
 }
 function getQueueLink(queueId) {
   return window.location.origin + window.location.pathname + '?queue=1&queueId=' + encodeURIComponent(queueId);
@@ -524,7 +540,7 @@ const QUEUE_I18N = {
     queue_label: 'Digital kö',
     language_label: 'Välj språk',
     page_title: 'Digital kö',
-    page_version: 'Version D11.18 – digital kö',
+    page_version: 'Version D11.17 – digital kö',
     howto_title: 'Så gör du',
     howto_steps: '1. Skriv ditt namn om du vill<br>2. Tryck på <strong>Gå med i kön</strong><br>3. Vänta tills du får ett nummer',
     name_label: 'Ditt namn (valfritt)',
@@ -552,15 +568,15 @@ const QUEUE_I18N = {
     pickup: 'Hämtning',
     current_call_title: 'Aktuellt upprop',
     current_call_none: 'Inget nummer ropas upp just nu.',
-    turn_now: 'Nu är det din tur',
-    turn_soon: 'Det är snart din tur',
-    current_call_prefix: 'Vi ropar upp nummer'
+    current_call_prefix: 'Vi ropar upp nummer',
+    got_number_title: 'Du har fått ett könummer',
+    got_number_text: 'Du har redan fått ditt könummer. Matutdelningen börjar snart och vi kommer ropa upp ditt nummer, så håll koll och vänta på din tur.'
   },
   en: {
     queue_label: 'Digital queue',
     language_label: 'Choose language',
     page_title: 'Digital queue',
-    page_version: 'Version D11.18 – digital queue',
+    page_version: 'Version D11.17 – digital queue',
     howto_title: 'How it works',
     howto_steps: '1. Enter your name if you want<br>2. Press <strong>Join the queue</strong><br>3. Wait until you receive a number',
     name_label: 'Your name (optional)',
@@ -588,9 +604,9 @@ const QUEUE_I18N = {
     pickup: 'Collection',
     current_call_title: 'Current call',
     current_call_none: 'No number is being called right now.',
-    turn_now: 'It is your turn now',
-    turn_soon: 'It will be your turn soon',
-    current_call_prefix: 'We are calling number'
+    current_call_prefix: 'We are calling number',
+    got_number_title: 'You have received a queue number',
+    got_number_text: 'You already have your queue number. Food distribution starts soon and we will call your number, so please stay alert and wait for your turn.'
   },
   es: {
     queue_label: 'Fila digital',
@@ -624,9 +640,9 @@ const QUEUE_I18N = {
     pickup: 'Recogida',
     current_call_title: 'Llamando ahora',
     current_call_none: 'No se está llamando a ningún número ahora mismo.',
-    turn_now: 'Ahora es tu turno',
-    turn_soon: 'Pronto será tu turno',
-    current_call_prefix: 'Estamos llamando al número'
+    current_call_prefix: 'Estamos llamando al número',
+    got_number_title: 'Has recibido un número de fila',
+    got_number_text: 'Ya tienes tu número de fila. La distribución de comida empezará pronto y llamaremos tu número, así que mantente atento y espera tu turno.'
   },
   ar: {
     queue_label: 'الطابور الرقمي',
@@ -660,9 +676,9 @@ const QUEUE_I18N = {
     pickup: 'الاستلام',
     current_call_title: 'النداء الحالي',
     current_call_none: 'لا يتم نداء أي رقم الآن.',
-    turn_now: 'الآن جاء دورك',
-    turn_soon: 'سيأتي دورك قريباً',
-    current_call_prefix: 'نحن ننادي الرقم'
+    current_call_prefix: 'نحن ننادي الرقم',
+    got_number_title: 'لقد حصلت على رقم',
+    got_number_text: 'لديك رقمك بالفعل. سيبدأ توزيع الطعام قريباً وسننادي رقمك، لذا انتبه وانتظر دورك.'
   },
   uk: {
     queue_label: 'Цифрова черга',
@@ -696,9 +712,9 @@ const QUEUE_I18N = {
     pickup: 'Отримання',
     current_call_title: 'Поточний виклик',
     current_call_none: 'Зараз не викликають жодного номера.',
-    turn_now: 'Зараз ваша черга',
-    turn_soon: 'Скоро буде ваша черга',
-    current_call_prefix: 'Зараз викликають номер'
+    current_call_prefix: 'Зараз викликають номер',
+    got_number_title: 'Ви отримали номер черги',
+    got_number_text: 'У вас уже є номер черги. Роздача їжі скоро почнеться, і ми оголосимо ваш номер, тож, будь ласка, стежте та чекайте своєї черги.'
   }
 };
 
@@ -734,8 +750,8 @@ function updatePublicCalledNumber() {
   const titleEl = document.getElementById('calledNumberTitle');
   const valueEl = document.getElementById('calledNumberValue');
   const subEl = document.getElementById('calledNumberSub');
-  const boxEl = document.getElementById('calledNumberBox');
-  if (!titleEl || !valueEl || !subEl || !boxEl) return;
+  const statusEl = document.getElementById('queueStatusText');
+  if (!titleEl || !valueEl || !subEl) return;
 
   titleEl.textContent = tQueue('current_call_title');
 
@@ -875,7 +891,7 @@ function clearCurrentNumber() {
   setCurrentNumberForQueue(queueId, null);
   updateCurrentNumberDisplay();
 }
-function callNextNumber() {
+async function callNextNumber() {
   const queueId = document.getElementById('adminQueueSelect')?.value;
   if (!queueId) {
     alert('Välj en kö först.');
@@ -908,8 +924,17 @@ function callNextNumber() {
     return;
   }
 
-  localStorage.setItem(getCurrentQueueNumberKey(queueId), String(nextNumber));
-  renderQueueAdminPanel();
+  try {
+    await api('/rest/v1/queue_sessions?id=eq.' + encodeURIComponent(queueId), {
+      method: 'PATCH',
+      headers: getHeaders(true, 'return=minimal'),
+      body: JSON.stringify({ current_called_number: Number(nextNumber) })
+    });
+    await reloadAll();
+    renderQueueAdminPanel();
+  } catch (err) {
+    alert('Kunde inte ropa nästa nummer: ' + err.message);
+  }
 }
 
 function assignNumbersToLateConfirm() {
@@ -2142,6 +2167,7 @@ function renderQueueView() {
   const publicStatus = document.getElementById('queuePublicStatus');
 
   applyQueueLanguageStatic();
+  updatePublicCalledNumber();
   publicStatus.textContent = '';
   publicStatus.className = 'status-msg';
 
@@ -2188,8 +2214,8 @@ function renderQueueView() {
   if (entry.queue_number != null) {
     const helperTitleEl = document.getElementById('queueHelperTitle');
     const helperTextEl = document.getElementById('queueHelperText');
-    if (helperTitleEl) helperTitleEl.textContent = 'Du har fått ett könummer';
-    if (helperTextEl) helperTextEl.innerHTML = 'Du har redan fått ditt könummer. Matutdelningen börjar snart och vi kommer ropa upp ditt nummer, så håll koll och vänta på din tur.';
+    if (helperTitleEl) helperTitleEl.textContent = tQueue('got_number_title');
+    if (helperTextEl) helperTextEl.innerHTML = tQueue('got_number_text');
     status.textContent = tQueue('queue_number');
     big.textContent = entry.queue_number;
     big.classList.remove('hidden');
