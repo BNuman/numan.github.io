@@ -134,6 +134,12 @@
     .secondary-btn{background:#E3F0FF!important;color:#1565C0!important}
     .danger-soft-btn{background:#f4f5f7!important;color:#6b7280!important;border:2px solid #d9dde3!important}
 
+  
+    .called-number-box{margin-top:12px;padding:14px;border:2px solid #d1e8da;border-radius:16px;background:#f7fbf8}
+    .called-number-title{font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#6b7280}
+    .called-number-value{font-size:34px;font-weight:900;line-height:1;color:#2E7D4F;margin-top:6px}
+    .called-number-sub{font-size:13px;font-weight:700;color:#64748b;margin-top:8px;line-height:1.45}
+
   </style>
 </head>
 <body>
@@ -142,7 +148,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1 id="mainPageTitle">Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D11.13.9.3 – digital kö</div>
+    <div class="version">Version D11.14.9.3 – digital kö</div>
   </div>
 
   
@@ -166,6 +172,11 @@
     <div class="queue-status-box" style="background:#f3f8f4;">
       <div id="queueStatusText" style="font-size:14px;line-height:1.6;color:#4b5563;font-weight:700;">Laddar köinformation…</div>
       <div id="queueBigNumber" class="queue-big-number hidden">0</div>
+    </div>
+    <div class="called-number-box" id="calledNumberBox">
+      <div class="called-number-title" id="calledNumberTitle">Aktuellt upprop</div>
+      <div class="called-number-value" id="calledNumberValue">-</div>
+      <div class="called-number-sub" id="calledNumberSub">Vi visar här vilket nummer som ropas upp just nu.</div>
     </div>
     <div class="input-group" id="queueNameWrap" style="margin-top:14px;">
       <div class="section-label">Ditt namn (valfritt)</div>
@@ -510,10 +521,15 @@ let currentQueueLang = localStorage.getItem(QUEUE_LANG_KEY) || 'sv';
 
 const QUEUE_I18N = {
   sv: {
+    current_call_title: 'Aktuellt upprop',
+    current_call_none: 'Inget nummer ropas upp just nu.',
+    current_call_value_none: '-',
+    current_call_with_number: 'Vi ropar upp nummer',
+    current_call_help: 'Vi visar här vilket nummer som ropas upp just nu.',
     queue_label: 'Digital kö',
     language_label: 'Välj språk',
     page_title: 'Digital kö',
-    page_version: 'Version D11.13.9 – digital kö',
+    page_version: 'Version D11.14.9 – digital kö',
     howto_title: 'Så gör du',
     howto_steps: '1. Skriv ditt namn om du vill<br>2. Tryck på <strong>Gå med i kön</strong><br>3. Vänta tills du får ett nummer',
     name_label: 'Ditt namn (valfritt)',
@@ -541,10 +557,15 @@ const QUEUE_I18N = {
     pickup: 'Hämtning'
   },
   en: {
+    current_call_title: 'Current call',
+    current_call_none: 'No number is being called right now.',
+    current_call_value_none: '-',
+    current_call_with_number: 'We are calling number',
+    current_call_help: 'We show here which number is being called right now.',
     queue_label: 'Digital queue',
     language_label: 'Choose language',
     page_title: 'Digital queue',
-    page_version: 'Version D11.13.9 – digital queue',
+    page_version: 'Version D11.14.9 – digital queue',
     howto_title: 'How it works',
     howto_steps: '1. Enter your name if you want<br>2. Press <strong>Join the queue</strong><br>3. Wait until you receive a number',
     name_label: 'Your name (optional)',
@@ -572,6 +593,11 @@ const QUEUE_I18N = {
     pickup: 'Collection'
   },
   es: {
+    current_call_title: 'Número actual',
+    current_call_none: 'No se está llamando a ningún número ahora mismo.',
+    current_call_value_none: '-',
+    current_call_with_number: 'Estamos llamando al número',
+    current_call_help: 'Aquí mostramos qué número se está llamando ahora mismo.',
     queue_label: 'Fila digital',
     language_label: 'Elegir idioma',
     page_title: 'Fila digital',
@@ -603,6 +629,11 @@ const QUEUE_I18N = {
     pickup: 'Recogida'
   },
   ar: {
+    current_call_title: 'النداء الحالي',
+    current_call_none: 'لا يتم نداء أي رقم الآن.',
+    current_call_value_none: '-',
+    current_call_with_number: 'نحن ننادي الرقم',
+    current_call_help: 'نعرض هنا الرقم الذي يتم النداء عليه الآن.',
     queue_label: 'الطابور الرقمي',
     language_label: 'اختر اللغة',
     page_title: 'الطابور الرقمي',
@@ -634,6 +665,11 @@ const QUEUE_I18N = {
     pickup: 'الاستلام'
   },
   uk: {
+    current_call_title: 'Поточний виклик',
+    current_call_none: 'Зараз не викликають жодного номера.',
+    current_call_value_none: '-',
+    current_call_with_number: 'Зараз викликають номер',
+    current_call_help: 'Тут показано, який номер викликають зараз.',
     queue_label: 'Цифрова черга',
     language_label: 'Оберіть мову',
     page_title: 'Цифрова черга',
@@ -743,7 +779,8 @@ function applyQueueLanguageStatic() {
     joinBtn.textContent = btnState === 'closed' ? tQueue('queue_soon') : tQueue('join');
   }
 
-  updateQueueLanguageUI();
+  updatePublicCalledNumber();
+  updateCurrentQueueLanguageUI();
 }
 function setQueueLanguage(lang) {
   currentQueueLang = QUEUE_I18N[lang] ? lang : 'sv';
@@ -2079,6 +2116,7 @@ function renderQueueView() {
   const publicStatus = document.getElementById('queuePublicStatus');
 
   applyQueueLanguageStatic();
+  updatePublicCalledNumber();
   publicStatus.textContent = '';
   publicStatus.className = 'status-msg';
 
@@ -2180,6 +2218,7 @@ async function init() {
     refreshSignupButton();
     restoreAdminSession();
     applyQueueLanguageStatic();
+    updatePublicCalledNumber();
     updateCurrentNumberDisplay();
     if (isQueueMode()) {
       renderQueueView();
