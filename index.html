@@ -719,6 +719,103 @@ function setQueueLanguage(lang) {
   if (typeof renderQueueView === 'function' && isQueueMode()) renderQueueView();
 }
 
+
+const CURRENT_NUMBER_KEY = 'hf_current_number_by_queue_v1';
+
+function getCurrentNumberMap() {
+  try { return JSON.parse(localStorage.getItem(CURRENT_NUMBER_KEY) || '{}'); } catch (e) { return {}; }
+}
+function getSelectedAdminQueueId() {
+  return document.getElementById('adminQueueSelect')?.value || '';
+}
+function getCurrentNumberForQueue(queueId) {
+  const map = getCurrentNumberMap();
+  return map[queueId] ?? null;
+}
+function setCurrentNumberForQueue(queueId, value) {
+  const map = getCurrentNumberMap();
+  if (value === null || value === undefined || value === '') {
+    delete map[queueId];
+  } else {
+    map[queueId] = String(value);
+  }
+  localStorage.setItem(CURRENT_NUMBER_KEY, JSON.stringify(map));
+}
+function updateCurrentNumberDisplay() {
+  const el = document.getElementById('currentNumberDisplay');
+  if (!el) return;
+  const queueId = getSelectedAdminQueueId();
+  if (!queueId) {
+    el.textContent = '-';
+    return;
+  }
+  const current = getCurrentNumberForQueue(queueId);
+  el.textContent = current || '-';
+}
+function setCurrentNumber() {
+  const queueId = getSelectedAdminQueueId();
+  if (!queueId) {
+    alert('Välj en kö först.');
+    return;
+  }
+  const current = getCurrentNumberForQueue(queueId) || '';
+  const num = prompt('Vilket nummer ropar ni upp just nu?', current);
+  if (num === null) return;
+  const clean = String(num).trim();
+  if (!clean) return;
+  if (!/^\d+$/.test(clean)) {
+    alert('Ange bara ett nummer.');
+    return;
+  }
+  setCurrentNumberForQueue(queueId, clean);
+  updateCurrentNumberDisplay();
+}
+function clearCurrentNumber() {
+  const queueId = getSelectedAdminQueueId();
+  if (!queueId) {
+    alert('Välj en kö först.');
+    return;
+  }
+  setCurrentNumberForQueue(queueId, null);
+  updateCurrentNumberDisplay();
+}
+function callNextNumber() {
+  const queueId = getSelectedAdminQueueId();
+  if (!queueId) {
+    alert('Välj en kö först.');
+    return;
+  }
+
+  const assigned = getQueueEntriesForSession(queueId)
+    .filter(r => r.status === 'assigned' && r.queue_number != null)
+    .slice()
+    .sort((a, b) => Number(a.queue_number) - Number(b.queue_number));
+
+  if (!assigned.length) {
+    alert('Det finns inga utdelade köplatser ännu.');
+    return;
+  }
+
+  const current = getCurrentNumberForQueue(queueId);
+  let nextNumber = null;
+
+  if (!current) {
+    nextNumber = assigned[0].queue_number;
+  } else {
+    const currentNum = Number(current);
+    const bigger = assigned.find(r => Number(r.queue_number) > currentNum);
+    nextNumber = bigger ? bigger.queue_number : null;
+  }
+
+  if (nextNumber === null) {
+    alert('Det finns inget högre nummer att ropa upp.');
+    return;
+  }
+
+  setCurrentNumberForQueue(queueId, String(nextNumber));
+  updateCurrentNumberDisplay();
+}
+
 function escapeHtml(v) {
   return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 }
@@ -1624,6 +1721,7 @@ function renderQueueAdminPanel() {
 
   const session = queueSessionsCache.find(q => q.id === queueId);
   const rows = getQueueEntriesForSession(queueId);
+  updateCurrentNumberDisplay();
   const waiting = rows.filter(r => r.status === 'waiting').length;
   const assigned = rows.filter(r => r.status === 'assigned').length;
   const left = rows.filter(r => r.status === 'left').length;
@@ -1987,6 +2085,7 @@ async function init() {
     refreshSignupButton();
     restoreAdminSession();
     applyQueueLanguageStatic();
+    updateCurrentNumberDisplay();
     if (isQueueMode()) {
       renderQueueView();
       startQueuePolling();
