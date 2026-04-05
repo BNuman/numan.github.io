@@ -148,7 +148,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1 id="mainPageTitle">Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D11.14.9.3 – digital kö</div>
+    <div class="version">Version D11.15.9.3 – digital kö</div>
   </div>
 
   
@@ -176,7 +176,7 @@
     <div class="called-number-box" id="calledNumberBox">
       <div class="called-number-title" id="calledNumberTitle">Aktuellt upprop</div>
       <div class="called-number-value" id="calledNumberValue">-</div>
-      <div class="called-number-sub" id="calledNumberSub">Vi visar här vilket nummer som ropas upp just nu.</div>
+      <div class="called-number-sub" id="calledNumberSub">Inget nummer ropas upp just nu.</div>
     </div>
     <div class="input-group" id="queueNameWrap" style="margin-top:14px;">
       <div class="section-label">Ditt namn (valfritt)</div>
@@ -521,15 +521,10 @@ let currentQueueLang = localStorage.getItem(QUEUE_LANG_KEY) || 'sv';
 
 const QUEUE_I18N = {
   sv: {
-    current_call_title: 'Aktuellt upprop',
-    current_call_none: 'Inget nummer ropas upp just nu.',
-    current_call_value_none: '-',
-    current_call_with_number: 'Vi ropar upp nummer',
-    current_call_help: 'Vi visar här vilket nummer som ropas upp just nu.',
     queue_label: 'Digital kö',
     language_label: 'Välj språk',
     page_title: 'Digital kö',
-    page_version: 'Version D11.14.9 – digital kö',
+    page_version: 'Version D11.15 – digital kö',
     howto_title: 'Så gör du',
     howto_steps: '1. Skriv ditt namn om du vill<br>2. Tryck på <strong>Gå med i kön</strong><br>3. Vänta tills du får ett nummer',
     name_label: 'Ditt namn (valfritt)',
@@ -554,18 +549,16 @@ const QUEUE_I18N = {
     left_status: 'Du har lämnat kön.',
     note: 'Du behåller din plats i kön även om du väntar här. Du behöver inte trycka igen.',
     food_distribution: 'Matutdelning',
-    pickup: 'Hämtning'
+    pickup: 'Hämtning',
+    current_call_title: 'Aktuellt upprop',
+    current_call_none: 'Inget nummer ropas upp just nu.',
+    current_call_prefix: 'Vi ropar upp nummer'
   },
   en: {
-    current_call_title: 'Current call',
-    current_call_none: 'No number is being called right now.',
-    current_call_value_none: '-',
-    current_call_with_number: 'We are calling number',
-    current_call_help: 'We show here which number is being called right now.',
     queue_label: 'Digital queue',
     language_label: 'Choose language',
     page_title: 'Digital queue',
-    page_version: 'Version D11.14.9 – digital queue',
+    page_version: 'Version D11.15 – digital queue',
     howto_title: 'How it works',
     howto_steps: '1. Enter your name if you want<br>2. Press <strong>Join the queue</strong><br>3. Wait until you receive a number',
     name_label: 'Your name (optional)',
@@ -590,18 +583,16 @@ const QUEUE_I18N = {
     left_status: 'You have left the queue.',
     note: 'You keep your place in the queue while waiting here. You do not need to press again.',
     food_distribution: 'Food distribution',
-    pickup: 'Collection'
+    pickup: 'Collection',
+    current_call_title: 'Current call',
+    current_call_none: 'No number is being called right now.',
+    current_call_prefix: 'We are calling number'
   },
   es: {
-    current_call_title: 'Número actual',
-    current_call_none: 'No se está llamando a ningún número ahora mismo.',
-    current_call_value_none: '-',
-    current_call_with_number: 'Estamos llamando al número',
-    current_call_help: 'Aquí mostramos qué número se está llamando ahora mismo.',
     queue_label: 'Fila digital',
     language_label: 'Elegir idioma',
     page_title: 'Fila digital',
-    page_version: 'Versión D11.4 – fila digital',
+    page_version: 'Versión D11.15 – fila digital',
     howto_title: 'Cómo funciona',
     howto_steps: '1. Escribe tu nombre si quieres<br>2. Pulsa <strong>Unirme a la fila</strong><br>3. Espera hasta recibir un número',
     name_label: 'Tu nombre (opcional)',
@@ -626,18 +617,16 @@ const QUEUE_I18N = {
     left_status: 'Has salido de la fila.',
     note: 'Conservas tu lugar en la fila mientras esperas aquí. No necesitas pulsar otra vez.',
     food_distribution: 'Distribución de alimentos',
-    pickup: 'Recogida'
+    pickup: 'Recogida',
+    current_call_title: 'Llamando ahora',
+    current_call_none: 'No se está llamando a ningún número ahora mismo.',
+    current_call_prefix: 'Estamos llamando al número'
   },
   ar: {
-    current_call_title: 'النداء الحالي',
-    current_call_none: 'لا يتم نداء أي رقم الآن.',
-    current_call_value_none: '-',
-    current_call_with_number: 'نحن ننادي الرقم',
-    current_call_help: 'نعرض هنا الرقم الذي يتم النداء عليه الآن.',
     queue_label: 'الطابور الرقمي',
     language_label: 'اختر اللغة',
     page_title: 'الطابور الرقمي',
-    page_version: 'الإصدار D11.4 – الطابور الرقمي',
+    page_version: 'الإصدار D11.15 – الطابور الرقمي',
     howto_title: 'كيف يعمل',
     howto_steps: '1. اكتب اسمك إذا أردت<br>2. اضغط <strong>انضم إلى الطابور</strong><br>3. انتظر حتى تحصل على رقم',
     name_label: 'اسمك (اختياري)',
@@ -662,18 +651,16 @@ const QUEUE_I18N = {
     left_status: 'لقد غادرت الطابور.',
     note: 'ستحتفظ بمكانك في الطابور أثناء انتظارك هنا. لا تحتاج إلى الضغط مرة أخرى.',
     food_distribution: 'توزيع الطعام',
-    pickup: 'الاستلام'
+    pickup: 'الاستلام',
+    current_call_title: 'النداء الحالي',
+    current_call_none: 'لا يتم نداء أي رقم الآن.',
+    current_call_prefix: 'نحن ننادي الرقم'
   },
   uk: {
-    current_call_title: 'Поточний виклик',
-    current_call_none: 'Зараз не викликають жодного номера.',
-    current_call_value_none: '-',
-    current_call_with_number: 'Зараз викликають номер',
-    current_call_help: 'Тут показано, який номер викликають зараз.',
     queue_label: 'Цифрова черга',
     language_label: 'Оберіть мову',
     page_title: 'Цифрова черга',
-    page_version: 'Версія D11.4 – цифрова черга',
+    page_version: 'Версія D11.15 – цифрова черга',
     howto_title: 'Як це працює',
     howto_steps: '1. Введіть своє ім’я, якщо хочете<br>2. Натисніть <strong>Приєднатися до черги</strong><br>3. Зачекайте, поки отримаєте номер',
     name_label: 'Ваше ім’я (необов’язково)',
@@ -698,7 +685,10 @@ const QUEUE_I18N = {
     left_status: 'Ви вийшли з черги.',
     note: 'Ви зберігаєте своє місце в черзі, поки чекаєте тут. Не потрібно натискати ще раз.',
     food_distribution: 'Роздача їжі',
-    pickup: 'Отримання'
+    pickup: 'Отримання',
+    current_call_title: 'Поточний виклик',
+    current_call_none: 'Зараз не викликають жодного номера.',
+    current_call_prefix: 'Зараз викликають номер'
   }
 };
 
@@ -729,6 +719,31 @@ function translateQueueTitle(rawTitle) {
     return weekdays[lang][keyMap[m.toLowerCase()]] || m;
   });
   return title;
+}
+function updatePublicCalledNumber() {
+  const titleEl = document.getElementById('calledNumberTitle');
+  const valueEl = document.getElementById('calledNumberValue');
+  const subEl = document.getElementById('calledNumberSub');
+  if (!titleEl || !valueEl || !subEl) return;
+
+  titleEl.textContent = tQueue('current_call_title');
+
+  const queueId = (typeof getQueueIdFromUrl === 'function') ? getQueueIdFromUrl() : '';
+  if (!queueId || typeof getCurrentQueueNumber !== 'function') {
+    valueEl.textContent = '-';
+    subEl.textContent = tQueue('current_call_none');
+    return;
+  }
+
+  const current = getCurrentQueueNumber(queueId);
+  if (!current) {
+    valueEl.textContent = '-';
+    subEl.textContent = tQueue('current_call_none');
+    return;
+  }
+
+  valueEl.textContent = current;
+  subEl.textContent = tQueue('current_call_prefix') + ' ' + current + '.';
 }
 function applyQueueLanguageStatic() {
   const queueSection = document.getElementById('queueSectionLabel');
@@ -780,7 +795,7 @@ function applyQueueLanguageStatic() {
   }
 
   updatePublicCalledNumber();
-  updateCurrentQueueLanguageUI();
+  updateQueueLanguageUI();
 }
 function setQueueLanguage(lang) {
   currentQueueLang = QUEUE_I18N[lang] ? lang : 'sv';
@@ -2116,7 +2131,6 @@ function renderQueueView() {
   const publicStatus = document.getElementById('queuePublicStatus');
 
   applyQueueLanguageStatic();
-  updatePublicCalledNumber();
   publicStatus.textContent = '';
   publicStatus.className = 'status-msg';
 
@@ -2218,7 +2232,6 @@ async function init() {
     refreshSignupButton();
     restoreAdminSession();
     applyQueueLanguageStatic();
-    updatePublicCalledNumber();
     updateCurrentNumberDisplay();
     if (isQueueMode()) {
       renderQueueView();
