@@ -125,6 +125,15 @@
     .current-number-sub{font-size:12px;color:#64748b;font-weight:700;margin-top:4px}
     .current-number-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 
+  
+    .action-group{margin-top:14px;padding-top:10px;border-top:2px dashed #d7eadc}
+    .action-group:first-of-type{margin-top:10px;padding-top:0;border-top:none}
+    .action-group-title{font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#6b7280;margin-bottom:8px}
+    .primary-big-btn{width:100%;padding:16px 14px;border:none;border-radius:14px;background:#2E7D4F;color:#fff;font-size:18px;font-weight:900;font-family:'Nunito',sans-serif;cursor:pointer;box-shadow:0 8px 18px rgba(46,125,79,.18)}
+    .helper-mini{font-size:12px;color:#64748b;font-weight:700;margin-top:8px;line-height:1.45}
+    .secondary-btn{background:#E3F0FF!important;color:#1565C0!important}
+    .danger-soft-btn{background:#f4f5f7!important;color:#6b7280!important;border:2px solid #d9dde3!important}
+
   </style>
 </head>
 <body>
@@ -133,7 +142,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1 id="mainPageTitle">Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D11.12.9.3 – digital kö</div>
+    <div class="version">Version D11.13.9.3 – digital kö</div>
   </div>
 
   
@@ -482,7 +491,7 @@ const QUEUE_I18N = {
     queue_label: 'Digital kö',
     language_label: 'Välj språk',
     page_title: 'Digital kö',
-    page_version: 'Version D11.12.9 – digital kö',
+    page_version: 'Version D11.13.9 – digital kö',
     howto_title: 'Så gör du',
     howto_steps: '1. Skriv ditt namn om du vill<br>2. Tryck på <strong>Gå med i kön</strong><br>3. Vänta tills du får ett nummer',
     name_label: 'Ditt namn (valfritt)',
@@ -513,7 +522,7 @@ const QUEUE_I18N = {
     queue_label: 'Digital queue',
     language_label: 'Choose language',
     page_title: 'Digital queue',
-    page_version: 'Version D11.12.9 – digital queue',
+    page_version: 'Version D11.13.9 – digital queue',
     howto_title: 'How it works',
     howto_steps: '1. Enter your name if you want<br>2. Press <strong>Join the queue</strong><br>3. Wait until you receive a number',
     name_label: 'Your name (optional)',
@@ -771,6 +780,13 @@ function setCurrentNumber() {
   }
   setCurrentNumberForQueue(queueId, clean);
   updateCurrentNumberDisplay();
+  const currentNumberSub = document.getElementById('currentNumberSub');
+  const currentNumberValue = getCurrentQueueNumber(queueId);
+  if (currentNumberSub) {
+    currentNumberSub.textContent = currentNumberValue
+      ? ('Ni ropar upp nummer ' + currentNumberValue + ' just nu.')
+      : 'Här ser ni vilket nummer ni ropar upp just nu.';
+  }
 }
 function clearCurrentNumber() {
   const queueId = getSelectedAdminQueueId();
@@ -816,6 +832,22 @@ function callNextNumber() {
 
   localStorage.setItem(getCurrentQueueNumberKey(queueId), String(nextNumber));
   renderQueueAdminPanel();
+}
+
+function assignNumbersToLateConfirm() {
+  const queueId = document.getElementById('adminQueueSelect')?.value;
+  if (!queueId) { alert('Välj en kö först.'); return; }
+
+  const rows = getQueueEntriesForSession(queueId);
+  const late = rows.filter(r => (r.status === 'waiting' || r.status === 'registered') && (r.queue_number == null));
+
+  if (!late.length) {
+    alert('Inga sena att tilldela nummer.');
+    return;
+  }
+
+  if (!confirm('Är du säker? Detta ger nästa lediga nummer till alla som väntar utan nummer.')) return;
+  assignNumbersToLate();
 }
 
 async function assignNumbersToLate() {
