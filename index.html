@@ -133,7 +133,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1 id="mainPageTitle">Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D11.9.9.3 – digital kö</div>
+    <div class="version">Version D11.10.9.3 – digital kö</div>
   </div>
 
   
@@ -312,6 +312,7 @@
           <div class="current-number-sub" id="currentNumberSub">Sätt vilket nummer ni ropar upp just nu.</div>
           <div class="current-number-actions">
             <button class="mini-btn active" type="button" onclick="setCurrentQueueNumber()">Sätt aktuellt nummer</button>
+            <button class="mini-btn active" type="button" onclick="callNextNumber()">Ropa nästa nummer</button>
             <button class="mini-btn" type="button" onclick="clearCurrentQueueNumber()">Rensa aktuellt nummer</button>
           </div>
         </div>
@@ -480,7 +481,7 @@ const QUEUE_I18N = {
     queue_label: 'Digital kö',
     language_label: 'Välj språk',
     page_title: 'Digital kö',
-    page_version: 'Version D11.9.9 – digital kö',
+    page_version: 'Version D11.10.9 – digital kö',
     howto_title: 'Så gör du',
     howto_steps: '1. Skriv ditt namn om du vill<br>2. Tryck på <strong>Gå med i kön</strong><br>3. Vänta tills du får ett nummer',
     name_label: 'Ditt namn (valfritt)',
@@ -511,7 +512,7 @@ const QUEUE_I18N = {
     queue_label: 'Digital queue',
     language_label: 'Choose language',
     page_title: 'Digital queue',
-    page_version: 'Version D11.9.9 – digital queue',
+    page_version: 'Version D11.10.9 – digital queue',
     howto_title: 'How it works',
     howto_steps: '1. Enter your name if you want<br>2. Press <strong>Join the queue</strong><br>3. Wait until you receive a number',
     name_label: 'Your name (optional)',
@@ -749,7 +750,7 @@ function updateCurrentNumberDisplay() {
     el.textContent = '-';
     return;
   }
-  const current = getCurrentQueueNumber(queueId);
+  const current = getCurrentNumberForQueue(queueId);
   el.textContent = current || '-';
 }
 function setCurrentNumber() {
