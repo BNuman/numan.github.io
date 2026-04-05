@@ -126,7 +126,7 @@
     .current-number-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 
   
-    .action-group{margin-top:14px;padding-top:10px;border-top:2px dashed #d7eadc}
+    .action-group{margin-top:14px;padding-top:12px;border-top:2px dashed #d7eadc}
     .action-group:first-of-type{margin-top:10px;padding-top:0;border-top:none}
     .action-group-title{font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#6b7280;margin-bottom:8px}
     .primary-big-btn{width:100%;padding:16px 14px;border:none;border-radius:14px;background:#2E7D4F;color:#fff;font-size:18px;font-weight:900;font-family:'Nunito',sans-serif;cursor:pointer;box-shadow:0 8px 18px rgba(46,125,79,.18)}
@@ -318,12 +318,34 @@
         <div class="current-number-box" id="currentNumberBox">
           <div class="section-label" style="margin-bottom:4px;">Aktuellt upprop</div>
           <div class="current-number-value" id="currentNumberDisplay">-</div>
-          <div class="current-number-sub" id="currentNumberSub">Sätt vilket nummer ni ropar upp just nu.</div>
-          <div class="current-number-actions">
-            <button class="mini-btn active" type="button" onclick="setCurrentQueueNumber()">Sätt aktuellt nummer</button>
-            <button class="mini-btn active" type="button" onclick="assignNumbersToLate()">Ge nummer till sena</button>
-            <button class="mini-btn active" type="button" onclick="callNextNumber()">Ropa nästa nummer</button>
-            <button class="mini-btn" type="button" onclick="clearCurrentQueueNumber()">Rensa aktuellt nummer</button>
+          <div class="current-number-sub" id="currentNumberSub">Här ser ni vilket nummer ni ropar upp just nu.</div>
+
+          <div class="action-group">
+            <button class="primary-big-btn" type="button" onclick="callNextNumber()">Ropa nästa nummer</button>
+            <div class="helper-mini">Använd denna under pågående matutdelning.</div>
+          </div>
+
+          <div class="action-group">
+            <div class="action-group-title">Manuell justering</div>
+            <div class="current-number-actions">
+              <button class="mini-btn secondary-btn" type="button" onclick="setCurrentQueueNumber()">Sätt aktuellt nummer</button>
+            </div>
+            <div class="helper-mini">Använd om ni börjar mitt i eller behöver rätta numret manuellt.</div>
+          </div>
+
+          <div class="action-group">
+            <div class="action-group-title">Sena ankomster</div>
+            <div class="current-number-actions">
+              <button class="mini-btn secondary-btn" type="button" onclick="assignNumbersToLateConfirm()">Ge nummer till sena</button>
+            </div>
+            <div class="helper-mini">Använd bara när nya personer tillkommit efter att köplatser redan delats ut.</div>
+          </div>
+
+          <div class="action-group">
+            <div class="action-group-title">Återställ</div>
+            <div class="current-number-actions">
+              <button class="mini-btn danger-soft-btn" type="button" onclick="clearCurrentQueueNumber()">Rensa aktuellt nummer</button>
+            </div>
           </div>
         </div>
         <div id="queueLinkWrap" class="hidden" style="margin-top:12px;">
@@ -780,13 +802,6 @@ function setCurrentNumber() {
   }
   setCurrentNumberForQueue(queueId, clean);
   updateCurrentNumberDisplay();
-  const currentNumberSub = document.getElementById('currentNumberSub');
-  const currentNumberValue = getCurrentQueueNumber(queueId);
-  if (currentNumberSub) {
-    currentNumberSub.textContent = currentNumberValue
-      ? ('Ni ropar upp nummer ' + currentNumberValue + ' just nu.')
-      : 'Här ser ni vilket nummer ni ropar upp just nu.';
-  }
 }
 function clearCurrentNumber() {
   const queueId = getSelectedAdminQueueId();
