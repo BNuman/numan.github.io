@@ -125,6 +125,21 @@
     .current-number-sub{font-size:12px;color:#64748b;font-weight:700;margin-top:4px}
     .current-number-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 
+  
+    .action-group{margin-top:14px;padding-top:12px;border-top:2px dashed #d7eadc}
+    .action-group:first-of-type{margin-top:10px;padding-top:0;border-top:none}
+    .action-group-title{font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#6b7280;margin-bottom:8px}
+    .primary-big-btn{width:100%;padding:16px 14px;border:none;border-radius:14px;background:#2E7D4F;color:#fff;font-size:18px;font-weight:900;font-family:'Nunito',sans-serif;cursor:pointer;box-shadow:0 8px 18px rgba(46,125,79,.18)}
+    .helper-mini{font-size:12px;color:#64748b;font-weight:700;margin-top:8px;line-height:1.45}
+    .secondary-btn{background:#E3F0FF!important;color:#1565C0!important}
+    .danger-soft-btn{background:#f4f5f7!important;color:#6b7280!important;border:2px solid #d9dde3!important}
+
+  
+    .called-number-box{margin-top:12px;padding:14px;border:2px solid #d1e8da;border-radius:16px;background:#f7fbf8}
+    .called-number-title{font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#6b7280}
+    .called-number-value{font-size:34px;font-weight:900;line-height:1;color:#2E7D4F;margin-top:6px}
+    .called-number-sub{font-size:13px;font-weight:700;color:#64748b;margin-top:8px;line-height:1.45}
+
   </style>
 </head>
 <body>
@@ -133,7 +148,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1 id="mainPageTitle">Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D11.12.9.3 – digital kö</div>
+    <div class="version">Version D11.18 – digital kö</div>
   </div>
 
   
@@ -157,6 +172,11 @@
     <div class="queue-status-box" style="background:#f3f8f4;">
       <div id="queueStatusText" style="font-size:14px;line-height:1.6;color:#4b5563;font-weight:700;">Laddar köinformation…</div>
       <div id="queueBigNumber" class="queue-big-number hidden">0</div>
+    </div>
+    <div class="called-number-box" id="calledNumberBox" style="display:block;">
+      <div class="called-number-title" id="calledNumberTitle">Aktuellt upprop</div>
+      <div class="called-number-value" id="calledNumberValue">-</div>
+      <div class="called-number-sub" id="calledNumberSub">Inget nummer ropas upp just nu.</div>
     </div>
     <div class="input-group" id="queueNameWrap" style="margin-top:14px;">
       <div class="section-label">Ditt namn (valfritt)</div>
@@ -309,12 +329,34 @@
         <div class="current-number-box" id="currentNumberBox">
           <div class="section-label" style="margin-bottom:4px;">Aktuellt upprop</div>
           <div class="current-number-value" id="currentNumberDisplay">-</div>
-          <div class="current-number-sub" id="currentNumberSub">Sätt vilket nummer ni ropar upp just nu.</div>
-          <div class="current-number-actions">
-            <button class="mini-btn active" type="button" onclick="setCurrentQueueNumber()">Sätt aktuellt nummer</button>
-            <button class="mini-btn active" type="button" onclick="assignNumbersToLate()">Ge nummer till sena</button>
-            <button class="mini-btn active" type="button" onclick="callNextNumber()">Ropa nästa nummer</button>
-            <button class="mini-btn" type="button" onclick="clearCurrentQueueNumber()">Rensa aktuellt nummer</button>
+          <div class="current-number-sub" id="currentNumberSub">Här ser ni vilket nummer ni ropar upp just nu.</div>
+
+          <div class="action-group">
+            <button class="primary-big-btn" type="button" onclick="callNextNumber()">Ropa nästa nummer</button>
+            <div class="helper-mini">Använd denna under pågående matutdelning.</div>
+          </div>
+
+          <div class="action-group">
+            <div class="action-group-title">Manuell justering</div>
+            <div class="current-number-actions">
+              <button class="mini-btn secondary-btn" type="button" onclick="setCurrentQueueNumber()">Sätt aktuellt nummer</button>
+            </div>
+            <div class="helper-mini">Använd om ni börjar mitt i eller behöver rätta numret manuellt.</div>
+          </div>
+
+          <div class="action-group">
+            <div class="action-group-title">Sena ankomster</div>
+            <div class="current-number-actions">
+              <button class="mini-btn secondary-btn" type="button" onclick="assignNumbersToLateConfirm()">Ge nummer till sena</button>
+            </div>
+            <div class="helper-mini">Använd bara när nya personer tillkommit efter att köplatser redan delats ut.</div>
+          </div>
+
+          <div class="action-group">
+            <div class="action-group-title">Återställ</div>
+            <div class="current-number-actions">
+              <button class="mini-btn danger-soft-btn" type="button" onclick="clearCurrentQueueNumber()">Rensa aktuellt nummer</button>
+            </div>
           </div>
         </div>
         <div id="queueLinkWrap" class="hidden" style="margin-top:12px;">
@@ -398,32 +440,51 @@ function removeQueueEntry(queueId) {
   localStorage.setItem(QUEUE_ENTRY_KEY, JSON.stringify(map));
 }
 
-function getCurrentQueueNumberKey(queueId) {
-  return 'hf_current_queue_number_' + queueId;
-}
 function getCurrentQueueNumber(queueId) {
   if (!queueId) return '';
-  return localStorage.getItem(getCurrentQueueNumberKey(queueId)) || '';
+  const session = queueSessionsCache.find(q => q.id === queueId);
+  return session?.current_called_number != null ? String(session.current_called_number) : '';
 }
-function setCurrentQueueNumber() {
+async function setCurrentQueueNumber() {
   const queueId = document.getElementById('adminQueueSelect')?.value;
   if (!queueId) { alert('Välj en kö först.'); return; }
   const current = getCurrentQueueNumber(queueId);
   const num = prompt('Vilket nummer ropar ni upp just nu?', current || '');
   if (num === null) return;
   const clean = String(num).trim();
-  if (!clean) {
-    localStorage.removeItem(getCurrentQueueNumberKey(queueId));
-  } else {
-    localStorage.setItem(getCurrentQueueNumberKey(queueId), clean);
+  if (clean && !/^\d+$/.test(clean)) {
+    alert('Ange bara ett nummer.');
+    return;
   }
-  renderQueueAdminPanel();
+  try {
+    await api('/rest/v1/queue_sessions?id=eq.' + encodeURIComponent(queueId), {
+      method: 'PATCH',
+      headers: getHeaders(true, 'return=minimal'),
+      body: JSON.stringify({ current_called_number: clean ? Number(clean) : null })
+    });
+    await reloadAll();
+    renderQueueAdminPanel();
+  } catch (err) {
+    alert('Kunde inte sätta aktuellt nummer: ' + err.message);
+  }
 }
-function clearCurrentQueueNumber() {
+async function clearCurrentQueueNumber() {
   const queueId = document.getElementById('adminQueueSelect')?.value;
   if (!queueId) { alert('Välj en kö först.'); return; }
-  localStorage.removeItem(getCurrentQueueNumberKey(queueId));
-  renderQueueAdminPanel();
+
+  if (!confirm('Är du säker? Detta tar bort aktuellt upprop.')) return;
+
+  try {
+    await api('/rest/v1/queue_sessions?id=eq.' + encodeURIComponent(queueId), {
+      method: 'PATCH',
+      headers: getHeaders(true, 'return=minimal'),
+      body: JSON.stringify({ current_called_number: null })
+    });
+    await reloadAll();
+    renderQueueAdminPanel();
+  } catch (err) {
+    alert('Kunde inte rensa aktuellt nummer: ' + err.message);
+  }
 }
 function getQueueLink(queueId) {
   return window.location.origin + window.location.pathname + '?queue=1&queueId=' + encodeURIComponent(queueId);
@@ -482,7 +543,7 @@ const QUEUE_I18N = {
     queue_label: 'Digital kö',
     language_label: 'Välj språk',
     page_title: 'Digital kö',
-    page_version: 'Version D11.12.9 – digital kö',
+    page_version: 'Version D11.18 – digital kö',
     howto_title: 'Så gör du',
     howto_steps: '1. Skriv ditt namn om du vill<br>2. Tryck på <strong>Gå med i kön</strong><br>3. Vänta tills du får ett nummer',
     name_label: 'Ditt namn (valfritt)',
@@ -507,13 +568,16 @@ const QUEUE_I18N = {
     left_status: 'Du har lämnat kön.',
     note: 'Du behåller din plats i kön även om du väntar här. Du behöver inte trycka igen.',
     food_distribution: 'Matutdelning',
-    pickup: 'Hämtning'
+    pickup: 'Hämtning',
+    current_call_title: 'Aktuellt upprop',
+    current_call_none: 'Inget nummer ropas upp just nu.',
+    current_call_prefix: 'Vi ropar upp nummer'
   },
   en: {
     queue_label: 'Digital queue',
     language_label: 'Choose language',
     page_title: 'Digital queue',
-    page_version: 'Version D11.12.9 – digital queue',
+    page_version: 'Version D11.17 – digital queue',
     howto_title: 'How it works',
     howto_steps: '1. Enter your name if you want<br>2. Press <strong>Join the queue</strong><br>3. Wait until you receive a number',
     name_label: 'Your name (optional)',
@@ -538,13 +602,16 @@ const QUEUE_I18N = {
     left_status: 'You have left the queue.',
     note: 'You keep your place in the queue while waiting here. You do not need to press again.',
     food_distribution: 'Food distribution',
-    pickup: 'Collection'
+    pickup: 'Collection',
+    current_call_title: 'Current call',
+    current_call_none: 'No number is being called right now.',
+    current_call_prefix: 'We are calling number'
   },
   es: {
     queue_label: 'Fila digital',
     language_label: 'Elegir idioma',
     page_title: 'Fila digital',
-    page_version: 'Versión D11.4 – fila digital',
+    page_version: 'Versión D11.15 – fila digital',
     howto_title: 'Cómo funciona',
     howto_steps: '1. Escribe tu nombre si quieres<br>2. Pulsa <strong>Unirme a la fila</strong><br>3. Espera hasta recibir un número',
     name_label: 'Tu nombre (opcional)',
@@ -569,13 +636,16 @@ const QUEUE_I18N = {
     left_status: 'Has salido de la fila.',
     note: 'Conservas tu lugar en la fila mientras esperas aquí. No necesitas pulsar otra vez.',
     food_distribution: 'Distribución de alimentos',
-    pickup: 'Recogida'
+    pickup: 'Recogida',
+    current_call_title: 'Llamando ahora',
+    current_call_none: 'No se está llamando a ningún número ahora mismo.',
+    current_call_prefix: 'Estamos llamando al número'
   },
   ar: {
     queue_label: 'الطابور الرقمي',
     language_label: 'اختر اللغة',
     page_title: 'الطابور الرقمي',
-    page_version: 'الإصدار D11.4 – الطابور الرقمي',
+    page_version: 'الإصدار D11.15 – الطابور الرقمي',
     howto_title: 'كيف يعمل',
     howto_steps: '1. اكتب اسمك إذا أردت<br>2. اضغط <strong>انضم إلى الطابور</strong><br>3. انتظر حتى تحصل على رقم',
     name_label: 'اسمك (اختياري)',
@@ -600,13 +670,16 @@ const QUEUE_I18N = {
     left_status: 'لقد غادرت الطابور.',
     note: 'ستحتفظ بمكانك في الطابور أثناء انتظارك هنا. لا تحتاج إلى الضغط مرة أخرى.',
     food_distribution: 'توزيع الطعام',
-    pickup: 'الاستلام'
+    pickup: 'الاستلام',
+    current_call_title: 'النداء الحالي',
+    current_call_none: 'لا يتم نداء أي رقم الآن.',
+    current_call_prefix: 'نحن ننادي الرقم'
   },
   uk: {
     queue_label: 'Цифрова черга',
     language_label: 'Оберіть мову',
     page_title: 'Цифрова черга',
-    page_version: 'Версія D11.4 – цифрова черга',
+    page_version: 'Версія D11.15 – цифрова черга',
     howto_title: 'Як це працює',
     howto_steps: '1. Введіть своє ім’я, якщо хочете<br>2. Натисніть <strong>Приєднатися до черги</strong><br>3. Зачекайте, поки отримаєте номер',
     name_label: 'Ваше ім’я (необов’язково)',
@@ -631,7 +704,10 @@ const QUEUE_I18N = {
     left_status: 'Ви вийшли з черги.',
     note: 'Ви зберігаєте своє місце в черзі, поки чекаєте тут. Не потрібно натискати ще раз.',
     food_distribution: 'Роздача їжі',
-    pickup: 'Отримання'
+    pickup: 'Отримання',
+    current_call_title: 'Поточний виклик',
+    current_call_none: 'Зараз не викликають жодного номера.',
+    current_call_prefix: 'Зараз викликають номер'
   }
 };
 
@@ -662,6 +738,32 @@ function translateQueueTitle(rawTitle) {
     return weekdays[lang][keyMap[m.toLowerCase()]] || m;
   });
   return title;
+}
+function updatePublicCalledNumber() {
+  const titleEl = document.getElementById('calledNumberTitle');
+  const valueEl = document.getElementById('calledNumberValue');
+  const subEl = document.getElementById('calledNumberSub');
+  const boxEl = document.getElementById('calledNumberBox');
+  if (!titleEl || !valueEl || !subEl || !boxEl) return;
+
+  titleEl.textContent = tQueue('current_call_title');
+
+  const queueId = (typeof getQueueIdFromUrl === 'function') ? getQueueIdFromUrl() : '';
+  if (!queueId || typeof getCurrentQueueNumber !== 'function') {
+    valueEl.textContent = '-';
+    subEl.textContent = tQueue('current_call_none');
+    return;
+  }
+
+  const current = getCurrentQueueNumber(queueId);
+  if (!current) {
+    valueEl.textContent = '-';
+    subEl.textContent = tQueue('current_call_none');
+    return;
+  }
+
+  valueEl.textContent = current;
+  subEl.textContent = tQueue('current_call_prefix') + ' ' + current + '.';
 }
 function applyQueueLanguageStatic() {
   const queueSection = document.getElementById('queueSectionLabel');
@@ -712,6 +814,7 @@ function applyQueueLanguageStatic() {
     joinBtn.textContent = btnState === 'closed' ? tQueue('queue_soon') : tQueue('join');
   }
 
+  updatePublicCalledNumber();
   updateQueueLanguageUI();
 }
 function setQueueLanguage(lang) {
@@ -781,7 +884,7 @@ function clearCurrentNumber() {
   setCurrentNumberForQueue(queueId, null);
   updateCurrentNumberDisplay();
 }
-function callNextNumber() {
+async function callNextNumber() {
   const queueId = document.getElementById('adminQueueSelect')?.value;
   if (!queueId) {
     alert('Välj en kö först.');
@@ -814,8 +917,33 @@ function callNextNumber() {
     return;
   }
 
-  localStorage.setItem(getCurrentQueueNumberKey(queueId), String(nextNumber));
-  renderQueueAdminPanel();
+  try {
+    await api('/rest/v1/queue_sessions?id=eq.' + encodeURIComponent(queueId), {
+      method: 'PATCH',
+      headers: getHeaders(true, 'return=minimal'),
+      body: JSON.stringify({ current_called_number: Number(nextNumber) })
+    });
+    await reloadAll();
+    renderQueueAdminPanel();
+  } catch (err) {
+    alert('Kunde inte ropa nästa nummer: ' + err.message);
+  }
+}
+
+function assignNumbersToLateConfirm() {
+  const queueId = document.getElementById('adminQueueSelect')?.value;
+  if (!queueId) { alert('Välj en kö först.'); return; }
+
+  const rows = getQueueEntriesForSession(queueId);
+  const late = rows.filter(r => (r.status === 'waiting' || r.status === 'registered') && (r.queue_number == null));
+
+  if (!late.length) {
+    alert('Inga sena att tilldela nummer.');
+    return;
+  }
+
+  if (!confirm('Är du säker? Detta ger nästa lediga nummer till alla som väntar utan nummer.')) return;
+  assignNumbersToLate();
 }
 
 async function assignNumbersToLate() {
@@ -837,8 +965,6 @@ async function assignNumbersToLate() {
     alert('Inga sena att tilldela nummer.');
     return;
   }
-
-  if (!confirm('Ge nästa lediga nummer till alla sena som väntar?')) return;
 
   let next = max + 1;
 
@@ -2041,6 +2167,7 @@ function renderQueueView() {
     big.classList.add('hidden');
     leaveBtn.classList.add('hidden');
     if (joinBtn) joinBtn.classList.add('hidden');
+    updatePublicCalledNumber();
     return;
   }
 
@@ -2058,6 +2185,7 @@ function renderQueueView() {
     status.textContent = session.queue_open
       ? tQueue('wait_msg')
       : tQueue('closed_msg');
+    updatePublicCalledNumber();
     return;
   }
 
@@ -2069,6 +2197,7 @@ function renderQueueView() {
     big.classList.add('hidden');
     leaveBtn.classList.add('hidden');
     if (joinBtn) joinBtn.classList.add('hidden');
+    updatePublicCalledNumber();
     return;
   }
 
@@ -2081,6 +2210,7 @@ function renderQueueView() {
     big.textContent = entry.queue_number;
     big.classList.remove('hidden');
     if (joinBtn) joinBtn.classList.add('hidden');
+    updatePublicCalledNumber();
     return;
   }
 
