@@ -312,7 +312,6 @@
           <div class="current-number-sub" id="currentNumberSub">Sätt vilket nummer ni ropar upp just nu.</div>
           <div class="current-number-actions">
             <button class="mini-btn active" type="button" onclick="setCurrentQueueNumber()">Sätt aktuellt nummer</button>
-            <button class="mini-btn active" type="button" onclick="callNextNumber()">Ropa nästa nummer</button>
             <button class="mini-btn" type="button" onclick="clearCurrentQueueNumber()">Rensa aktuellt nummer</button>
           </div>
         </div>
@@ -750,7 +749,7 @@ function updateCurrentNumberDisplay() {
     el.textContent = '-';
     return;
   }
-  const current = getCurrentNumberForQueue(queueId);
+  const current = getCurrentQueueNumber(queueId);
   el.textContent = current || '-';
 }
 function setCurrentNumber() {
@@ -781,7 +780,7 @@ function clearCurrentNumber() {
   updateCurrentNumberDisplay();
 }
 function callNextNumber() {
-  const queueId = getSelectedAdminQueueId();
+  const queueId = document.getElementById('adminQueueSelect')?.value;
   if (!queueId) {
     alert('Välj en kö först.');
     return;
@@ -797,7 +796,7 @@ function callNextNumber() {
     return;
   }
 
-  const current = getCurrentNumberForQueue(queueId);
+  const current = getCurrentQueueNumber(queueId);
   let nextNumber = null;
 
   if (!current) {
@@ -813,8 +812,8 @@ function callNextNumber() {
     return;
   }
 
-  setCurrentNumberForQueue(queueId, String(nextNumber));
-  updateCurrentNumberDisplay();
+  localStorage.setItem(getCurrentQueueNumberKey(queueId), String(nextNumber));
+  renderQueueAdminPanel();
 }
 
 function escapeHtml(v) {
