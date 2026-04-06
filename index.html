@@ -148,7 +148,7 @@
     <img src="./logo.png" class="logo-img" alt="Humanity First Sverige">
     <div class="org-name">Humanity First Sverige</div>
     <h1 id="mainPageTitle">Volontäraktiviteter & digital kö</h1>
-    <div class="version">Version D11.18 – digital kö</div>
+    <div class="version">Version D11.19 – digital kö</div>
   </div>
 
   
@@ -183,6 +183,7 @@
       <input type="text" id="queueNameInput" placeholder="Skriv ditt namn om du vill" maxlength="50">
     </div>
     <div class="queue-note">Du behåller din plats i kön även om du väntar här. Du behöver inte trycka igen.</div>
+    <div id="queueTurnNotice" class="status-msg" style="font-weight:900;"></div>
     <div id="queuePublicStatus" class="status-msg"></div>
     <button class="submit-btn" type="button" id="queueJoinBtn" onclick="joinQueue()">Gå med i kön</button>
     <button class="submit-btn hidden" type="button" id="queueLeaveBtn" onclick="leaveQueue()" style="margin-top:10px;">Lämna kön</button>
@@ -471,6 +472,9 @@ async function setCurrentQueueNumber() {
 async function clearCurrentQueueNumber() {
   const queueId = document.getElementById('adminQueueSelect')?.value;
   if (!queueId) { alert('Välj en kö först.'); return; }
+
+  if (!confirm('Är du säker? Detta tar bort aktuellt upprop.')) return;
+
   try {
     await api('/rest/v1/queue_sessions?id=eq.' + encodeURIComponent(queueId), {
       method: 'PATCH',
@@ -540,7 +544,7 @@ const QUEUE_I18N = {
     queue_label: 'Digital kö',
     language_label: 'Välj språk',
     page_title: 'Digital kö',
-    page_version: 'Version D11.18 – digital kö',
+    page_version: 'Version D11.19 – digital kö',
     howto_title: 'Så gör du',
     howto_steps: '1. Skriv ditt namn om du vill<br>2. Tryck på <strong>Gå med i kön</strong><br>3. Vänta tills du får ett nummer',
     name_label: 'Ditt namn (valfritt)',
@@ -568,6 +572,8 @@ const QUEUE_I18N = {
     pickup: 'Hämtning',
     current_call_title: 'Aktuellt upprop',
     current_call_none: 'Inget nummer ropas upp just nu.',
+    turn_now: 'Nu är det din tur',
+    turn_soon: 'Det är snart din tur',
     current_call_prefix: 'Vi ropar upp nummer',
     got_number_title: 'Du har fått ett könummer',
     got_number_text: 'Du har redan fått ditt könummer. Matutdelningen börjar snart och vi kommer ropa upp ditt nummer, så håll koll och vänta på din tur.'
@@ -604,6 +610,8 @@ const QUEUE_I18N = {
     pickup: 'Collection',
     current_call_title: 'Current call',
     current_call_none: 'No number is being called right now.',
+    turn_now: 'It is your turn now',
+    turn_soon: 'It will be your turn soon',
     current_call_prefix: 'We are calling number',
     got_number_title: 'You have received a queue number',
     got_number_text: 'You already have your queue number. Food distribution starts soon and we will call your number, so please stay alert and wait for your turn.'
@@ -640,6 +648,8 @@ const QUEUE_I18N = {
     pickup: 'Recogida',
     current_call_title: 'Llamando ahora',
     current_call_none: 'No se está llamando a ningún número ahora mismo.',
+    turn_now: 'Ahora es tu turno',
+    turn_soon: 'Pronto será tu turno',
     current_call_prefix: 'Estamos llamando al número',
     got_number_title: 'Has recibido un número de fila',
     got_number_text: 'Ya tienes tu número de fila. La distribución de comida empezará pronto y llamaremos tu número, así que mantente atento y espera tu turno.'
@@ -676,6 +686,8 @@ const QUEUE_I18N = {
     pickup: 'الاستلام',
     current_call_title: 'النداء الحالي',
     current_call_none: 'لا يتم نداء أي رقم الآن.',
+    turn_now: 'الآن جاء دورك',
+    turn_soon: 'سيأتي دورك قريباً',
     current_call_prefix: 'نحن ننادي الرقم',
     got_number_title: 'لقد حصلت على رقم',
     got_number_text: 'لديك رقمك بالفعل. سيبدأ توزيع الطعام قريباً وسننادي رقمك، لذا انتبه وانتظر دورك.'
@@ -712,6 +724,8 @@ const QUEUE_I18N = {
     pickup: 'Отримання',
     current_call_title: 'Поточний виклик',
     current_call_none: 'Зараз не викликають жодного номера.',
+    turn_now: 'Зараз ваша черга',
+    turn_soon: 'Скоро буде ваша черга',
     current_call_prefix: 'Зараз викликають номер',
     got_number_title: 'Ви отримали номер черги',
     got_number_text: 'У вас уже є номер черги. Роздача їжі скоро почнеться, і ми оголосимо ваш номер, тож, будь ласка, стежте та чекайте своєї черги.'
@@ -772,6 +786,39 @@ function updatePublicCalledNumber() {
   valueEl.textContent = current;
   subEl.textContent = tQueue('current_call_prefix') + ' ' + current + '.';
 }
+
+function updateUserTurnNotification(entry) {
+  const noticeEl = document.getElementById('queueTurnNotice');
+  if (!noticeEl) return;
+
+  if (!entry || entry.queue_number == null) {
+    noticeEl.textContent = '';
+    noticeEl.className = 'status-msg';
+    return;
+  }
+
+  const queueId = getQueueIdFromUrl();
+  const current = getCurrentQueueNumber(queueId);
+  if (!current) {
+    noticeEl.textContent = '';
+    noticeEl.className = 'status-msg';
+    return;
+  }
+
+  const diff = Number(entry.queue_number) - Number(current);
+
+  if (diff === 0) {
+    noticeEl.textContent = tQueue('turn_now') + '!';
+    noticeEl.className = 'status-msg show ok';
+  } else if (diff > 0 && diff <= 3) {
+    noticeEl.textContent = tQueue('turn_soon');
+    noticeEl.className = 'status-msg show ok';
+  } else {
+    noticeEl.textContent = '';
+    noticeEl.className = 'status-msg';
+  }
+}
+
 function applyQueueLanguageStatic() {
   const queueSection = document.getElementById('queueSectionLabel');
   const languageLabel = document.getElementById('queueLanguageLabel');
@@ -972,8 +1019,6 @@ async function assignNumbersToLate() {
     alert('Inga sena att tilldela nummer.');
     return;
   }
-
-  if (!confirm('Ge nästa lediga nummer till alla sena som väntar?')) return;
 
   let next = max + 1;
 
@@ -2168,6 +2213,7 @@ function renderQueueView() {
 
   applyQueueLanguageStatic();
   updatePublicCalledNumber();
+  updateUserTurnNotification(entry);
   publicStatus.textContent = '';
   publicStatus.className = 'status-msg';
 
